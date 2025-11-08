@@ -21,6 +21,8 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private Harmony harmony = null!;
 
+    private ConfigEntry<float> JiAnimatorSpeed = null!;
+
     private void Awake() {
         Log.Init(Logger);
         RCGLifeCycle.DontDestroyForever(gameObject);
@@ -28,11 +30,11 @@ public class EnlightenedJi : BaseUnityPlugin {
         // Load patches from any class annotated with @HarmonyPatch
         harmony = Harmony.CreateAndPatchAll(typeof(EnlightenedJi).Assembly);
 
-        enableSomethingConfig = Config.Bind("General.Something", "Enable", true, "Enable the thing");
-        somethingKeyboardShortcut = Config.Bind("General.Something",
-            "Shortcut",
-            new KeyboardShortcut(KeyCode.H, KeyCode.LeftControl),
-            "Shortcut to execute");
+        // enableSomethingConfig = Config.Bind("General.Something", "Enable", true, "Enable the thing");
+        // somethingKeyboardShortcut = Config.Bind("General.Something",
+        //     "Shortcut",
+        //     new KeyboardShortcut(KeyCode.H, KeyCode.LeftControl),
+        //     "Shortcut to execute");
 
         // Usage of the modding API is entirely optional.
         // It provides utilities like the KeybindManager, utilities for Instantiating objects including the 
@@ -40,10 +42,19 @@ public class EnlightenedJi : BaseUnityPlugin {
         // If you do use the API make sure do have it installed when running your mod, and keep the dependency in the
         // thunderstore.toml.
 
-        KeybindManager.Add(this, TestMethod, () => somethingKeyboardShortcut.Value);
-        KeybindManager.Add(this, LoadAssetBundle, KeyCode.T);
+        // KeybindManager.Add(this, TestMethod, () => somethingKeyboardShortcut.Value);
+        // KeybindManager.Add(this, LoadAssetBundle, KeyCode.T);
 
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
+
+        JiAnimatorSpeed = Config.Bind("General", "JiSpeed", 1f, "The speed at which Ji's attacks occur");
+    }
+
+    public void Update() {
+        if (SceneManager.GetActiveScene().name == "A10_S5_Boss_Jee") {
+            Logger.LogInfo("Updating Ji variables!");
+            MonsterManager.Instance.ClosetMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value;
+        };
     }
 
     private void TestMethod() {
