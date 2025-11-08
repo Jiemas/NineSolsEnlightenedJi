@@ -1,4 +1,4 @@
-examplemod:
+enlightenedji:
     uvx unity-scene-repacker \
         --steam-game "Nine Sols" \
         --objects Resources/bundle.objects.jsonc \

@@ -2,10 +2,10 @@
 schemaVersion = "0.0.1"
 
 [package]
-namespace = "yournamespace"
-name = "YourModName"
+namespace = "Jiemas"
+name = "EnlightenedJi"
 versionNumber = "0.1.0"
-description = "your mod description"
+description = "Mods Ji to be harder"
 websiteUrl = "link to the git repo"
 containsNsfwContent = false
 
