@@ -35,14 +35,16 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private bool HPUpdated = false;
 
+    string temp = "";
+
     // #region Attacks BossGeneralState
     // BossGeneralState DivinationFreeZoneBossGeneralState = null!;
     // BossGeneralState FlyingProjectilesBossGeneralState = null!;
     // BossGeneralState BlackHoleAttackBossGeneralState = null!;
     // BossGeneralState SetLaserAltarsBossGeneralState = null!;
     // BossGeneralState SuckSwordBossGeneralState = null!;
-    // BossGeneralState TeleportSwordSmashBossGeneralState = null!;
-    // BossGeneralState SwordBlizzardBossGeneralState = null!;
+    BossGeneralState TeleportSwordSmashBossGeneralState = null!;
+    BossGeneralState SwordBlizzardBossGeneralState = null!;
     // BossGeneralState DivinationFreeZoneEndlessBossGeneralState = null!;
     // BossGeneralState GroundSwordBossGeneralState = null!;
     BossGeneralState SmallBlackHoleBossGeneralState = null!;
@@ -50,8 +52,8 @@ public class EnlightenedJi : BaseUnityPlugin {
     BossGeneralState QuickHorizontalDoubleSwordBossGeneralState = null!;
     BossGeneralState QuickTeleportSwordBossGeneralState = null!;
     BossGeneralState LaserAltarCircleBossGeneralState = null!;
-    // BossGeneralState HealthAltarBossGeneralState = null!;
-    // BossGeneralState DivinationJumpKickedBossGeneralState = null!;
+    BossGeneralState HealthAltarBossGeneralState = null!;
+    BossGeneralState DivinationJumpKickedBossGeneralState = null!;
     // #endregion
 
     PostureBreakState JiStunState = null!;
@@ -98,7 +100,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
 
         JiAnimatorSpeed = Config.Bind("General", "JiSpeed", 1.2f, "The speed at which Ji's attacks occur");
-        JiHPScale = Config.Bind("General", "JiHPScale", 7000f, "The amount of Ji's HP in Phase 1 (Phase 2 HP is double this value)");
+        JiHPScale = Config.Bind("General", "JiHPScale", 6000f, "The amount of Ji's HP in Phase 1 (Phase 2 HP is double this value)");
     }
 
     public void Update() {
@@ -108,17 +110,37 @@ public class EnlightenedJi : BaseUnityPlugin {
             GetAttackGameObjects();
             AlterAttacks();
             JiHPChange();
-            if (JiMonster && (JiMonster.currentMonsterState == SmallBlackHoleBossGeneralState || 
-            JiMonster.currentMonsterState == Engaging || 
-            (JiMonster.LastClipName == "Attack13" && JiMonster.currentMonsterState != QuickTeleportSwordBossGeneralState))) {
-                JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 3;
-                // ToastManager.Toast("Increased Ji Animation Speed for Black Hole and Laser Altar Circle Attack");
-            } else {
-                JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value;
-            }
+            JiSpeedChange();
             
+            if (JiMonster && temp != JiMonster.currentMonsterState.ToString()) {
+                temp = JiMonster.currentMonsterState.ToString();
+                ToastManager.Toast($"{JiMonster.currentMonsterState}");
+            }
         };
     }
+
+    private void JiSpeedChange() {
+        var JiMonster = MonsterManager.Instance.ClosetMonster;
+        if (!JiMonster) return;
+
+        if (JiMonster.currentMonsterState == SmallBlackHoleBossGeneralState || 
+        JiMonster.currentMonsterState == Engaging || 
+        JiMonster.currentMonsterState == DivinationJumpKickedBossGeneralState) 
+        {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 3;
+        } else if (JiMonster.LastClipName == "Attack13" && 
+            JiMonster.currentMonsterState != QuickTeleportSwordBossGeneralState &&
+            JiMonster.currentMonsterState != TeleportSwordSmashBossGeneralState &&
+            JiMonster.currentMonsterState != SwordBlizzardBossGeneralState) 
+        {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2;
+        } else if (JiMonster.currentMonsterState == HealthAltarBossGeneralState) {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 1;
+        } else {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value;
+        }
+    }
+
 
     private void JiHPChange() {
         var baseHealthRef = AccessTools.FieldRefAccess<MonsterStat, float>("BaseHealthValue");
@@ -209,6 +231,10 @@ public class EnlightenedJi : BaseUnityPlugin {
         QuickHorizontalDoubleSwordBossGeneralState = getBossGeneralState("[12][Short]QuickHorizontalDoubleSword");
         LaserAltarCircleBossGeneralState = getBossGeneralState("[14][Altar]Laser Altar Circle");
         QuickTeleportSwordBossGeneralState = getBossGeneralState("[13][Finisher]QuickTeleportSword 危戳");
+        DivinationJumpKickedBossGeneralState = getBossGeneralState("[16]Divination JumpKicked");
+        HealthAltarBossGeneralState = getBossGeneralState("[15][Altar]Health Altar");
+        TeleportSwordSmashBossGeneralState = getBossGeneralState("[6][Finisher]Teleport3Sword Smash 下砸");
+        SwordBlizzardBossGeneralState = getBossGeneralState("[7][Finisher]SwordBlizzard");
 
         Engaging = GameObject.Find($"{jiBossPath}States/1_Engaging").GetComponent<StealthEngaging>();
     }
@@ -268,21 +294,6 @@ public class EnlightenedJi : BaseUnityPlugin {
         SneakAttackStateGroup = go.AddComponent<MonsterStateGroup>();
         SneakAttackStateGroup.setting = SurpriseAttackWeightSetting;
 
-
-        // SneakAttackStateGroup = new MonsterStateGroup { setting = SurpriseAttackWeightSetting };
-        bool isNull = SneakAttackStateGroup == null;
-        ToastManager.Toast($"1. isNull? {isNull}");
-        if (SneakAttackStateGroup != null) {
-            ToastManager.Toast($"1. Type: {SneakAttackStateGroup.GetType().FullName}");
-        }
-
-        // SneakAttackStateGroup = GameObject.AddComponent<MonsterStateGroup>();
-        // SneakAttackStateGroup.setting = SurpriseAttackWeightSetting;
-        // ToastManager.Toast($"11. isNull? {isNull}");
-        // if (SneakAttackStateGroup != null) {
-        //     ToastManager.Toast($"11. Type: {SneakAttackStateGroup.GetType().FullName}");
-        // }
-
         AddSneakAttackGroupToSequence(AttackSequence1_FirstAttackGroupSequence);
         AddSneakAttackGroupToSequence(AttackSequence1_GroupSequence);
         AddSneakAttackGroupToSequence(AttackSequence1_AltarGroupSequence);
@@ -290,7 +301,6 @@ public class EnlightenedJi : BaseUnityPlugin {
         AddSneakAttackGroupToSequence(AttackSequence1_QuickToBlizzardGroupSequence);
         AddSneakAttackGroupToSequence(SpecialHealthSequence);
 
-        ToastManager.Toast($"2. {SneakAttackStateGroup}");
     }
 
     // Loads all the scenes contained in the AssetBundle, and spawn copies of their objects
