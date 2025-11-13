@@ -35,10 +35,14 @@ public class EnlightenedJi : BaseUnityPlugin {
     private string jiAttackGroupsPath = "";
 
     private bool HPUpdated = false;
-    private bool random = true;
     private bool phase2 = false;
 
     string temp = "";
+
+    int updateCounter = 0;
+    private int randomNum = 0;
+
+    System.Random random = new System.Random();
 
     // #region Attacks BossGeneralState
     BossGeneralState DivinationFreeZoneBossGeneralState = null!;
@@ -72,6 +76,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     MonsterStateGroupSequence AttackSequence1_QuickToBlizzardGroupSequence = null!;
     MonsterStateGroupSequence SpecialHealthSequence = null!;
     MonsterStateGroupSequence AttackSequence2_Opening = null!;
+    MonsterStateGroupSequence AttackSequence2_QuickToBlizzardGroupSequence = null!;
     #endregion
 
     #region Attack Groups MonsterStateGroup
@@ -134,11 +139,11 @@ public class EnlightenedJi : BaseUnityPlugin {
 
             if (JiMonster && temp != JiMonster.currentMonsterState.ToString()) {
                 temp = JiMonster.currentMonsterState.ToString();
-                random = !random;
+                randomNum = random.Next();
                 if (JiMonster.currentMonsterState == PhaseChangeState) {
                     phase2 = true;
                 }
-                ToastManager.Toast($"{JiMonster.currentMonsterState} | Random: {random} | Phase 2: {phase2}");
+                ToastManager.Toast($"{JiMonster.currentMonsterState} | Random: {random} | Phase 2: {phase2} | Sequence: {GetCurrentSequence()}");
             }
         } 
     }
@@ -169,7 +174,6 @@ public class EnlightenedJi : BaseUnityPlugin {
     }
 
     private bool JiSpeedChangePhase1() {
-        // ToastManager.Toast("Phase 1 Speed Change Active");
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         if ((JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak") && (
             JiMonster.currentMonsterState == ShortFlyingSwordBossGeneralState ||
@@ -179,7 +183,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2;
         } else if (JiMonster.currentMonsterState == QuickTeleportSwordBossGeneralState && 
             (JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak") || 
-            (random && (JiMonster.currentMonsterState == ShortFlyingSwordBossGeneralState 
+            (randomNum % 2 == 0 && (JiMonster.currentMonsterState == ShortFlyingSwordBossGeneralState 
                 || JiMonster.currentMonsterState == SuckSwordBossGeneralState))){
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.5f;
         } else {
@@ -200,11 +204,38 @@ public class EnlightenedJi : BaseUnityPlugin {
             JiMonster.currentMonsterState != QuickTeleportSwordBossGeneralState && 
             JiMonster.currentMonsterState != TeleportSwordSmashBossGeneralState)
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2; // Might be too fast??
-        // } else if (attackSequenceModule.sequence == AttackSequence2_Opening &&
-        //     JiMonster.currentMonsterState == LaserAltarHardAttackStateGroup)
-        // {
-        //     JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 1;
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.75f; // Might be too fast??
+
+        // Hard Altar Attack Speed Up
+        } else if (JiMonster.currentMonsterState == SetLaserAltarsBossGeneralState) 
+        {
+            updateCounter++;
+            if (updateCounter < 500) {
+                JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2;
+            } else {
+                updateCounter = 0;
+            }
+        
+        // Blizzard Attack Speed up
+        } else if (JiMonster.currentMonsterState == SwordBlizzardBossGeneralState &&
+            GetCurrentSequence() != AttackSequence2_QuickToBlizzardGroupSequence) 
+        {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.75f;
+
+        // Opening Sequence Sword Attack Speed Up
+        } else if (GetCurrentSequence() == AttackSequence2_Opening &&
+            (JiMonster.currentMonsterState == ShortFlyingSwordBossGeneralState ||
+            JiMonster.currentMonsterState == QuickHorizontalDoubleSwordBossGeneralState ||
+            JiMonster.currentMonsterState == FlyingProjectilesBossGeneralState ||
+            JiMonster.currentMonsterState == GroundSwordBossGeneralState))
+        {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.5f;
+        
+        // Red/Green Attack Speed Up
+        } else if (randomNum % 2 == 0 && (JiMonster.currentMonsterState == TeleportSwordSmashBossGeneralState ||
+            JiMonster.currentMonsterState == QuickTeleportSwordBossGeneralState))
+        {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.5f;
         } else {
             return false;
         }
@@ -234,6 +265,13 @@ public class EnlightenedJi : BaseUnityPlugin {
 
         var hasHat = Player.i.GetFieldValue<bool>("_hasHat"); // gets the field via reflection
         Player.i.SetHasHat(!hasHat);
+    }
+
+    private MonsterStateGroupSequence GetCurrentSequence(){
+        Type type = attackSequenceModule.GetType();
+        FieldInfo fieldInfo = type.GetField("sequence", BindingFlags.Instance | BindingFlags.NonPublic);
+        MonsterStateGroupSequence sequenceValue = (MonsterStateGroupSequence)fieldInfo.GetValue(attackSequenceModule);
+        return sequenceValue;
     }
 
     private void LoadAssetBundle() {
@@ -299,6 +337,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         SpecialHealthSequence = GameObject.Find($"{jiBossPath}MonsterCore/AttackSequenceModule/SpecialHealthSequence(Jee_Divination_Logic)").GetComponent<MonsterStateGroupSequence>();
         
         AttackSequence2_Opening = getGroupSequence2("MonsterStateGroupSequence1_Phase2_OpeningBlackHole");
+        AttackSequence2_QuickToBlizzardGroupSequence = getGroupSequence2("MonsterStateGroupSequence1_QuickToBlizzard");
 
         SmallBlackHoleMonsterStateGroup = getGroup("MonsterStateGroup_SmallBlackHole(Attack10)");
         LongerAttackStateGroup = AttackSequence1_GroupSequence.AttackSequence[3];
