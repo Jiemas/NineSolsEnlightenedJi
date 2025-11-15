@@ -19,8 +19,6 @@ namespace EnlightenedJi;
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class EnlightenedJi : BaseUnityPlugin {
     // https://docs.bepinex.dev/articles/dev_guide/plugin_tutorial/4_configuration.html
-    private ConfigEntry<bool> enableSomethingConfig = null!;
-    private ConfigEntry<KeyboardShortcut> somethingKeyboardShortcut = null!;
 
     private Harmony harmony = null!;
 
@@ -29,10 +27,49 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private string jiBossPath = "";
     private string jiAttackStatesPath = "";
-    private string jiStunStatePath = "";
     private string jiAttackSequences1Path = "";
     private string jiAttackSequences2Path = "";
     private string jiAttackGroupsPath = "";
+
+    private static string[] Attacks = [
+        "",
+        "[1]Divination Free Zone",
+        "[2][Short]Flying Projectiles",
+        "[3][Finisher]BlackHoleAttack",
+        "[4][Altar]Set Laser Altar Environment",
+        "[5][Short]SuckSword 往內",
+        "[6][Finisher]Teleport3Sword Smash 下砸",
+        "[7][Finisher]SwordBlizzard",
+        "",
+        "[9][Short]GroundSword",
+        "[10][Altar]SmallBlackHole",
+        "[11][Short]ShorFlyingSword",
+        "[12][Short]QuickHorizontalDoubleSword",
+        "[13][Finisher]QuickTeleportSword 危戳",
+        "[14][Altar]Laser Altar Circle",
+        "[15][Altar]Health Altar",
+        "[16]Divination JumpKicked"
+    ];
+
+    private static BossGeneralState[] BossGeneralStates = new BossGeneralState[17];
+
+    private static Weight<MonsterState>[] Weights = new Weight<MonsterState>[17];
+
+    private static string[] Sequences1 = { "", "_WithAltar", "_WithSmallBlackHole", "_QuickToBlizzard" };
+
+    private static string[] Sequences2 = { "", "_WithAltar", "_WithSmallBlackHole", "_QuickToBlizzard", 
+                                            "_QuickToBlackHole", "_Phase2_OpeningBlackHole" };
+    // private static string[] Groups = {
+    //     "SmallBlackHole(Attack10)", 
+    //     "LongerAttack(Attack2/Attack5/Attack9)", 
+    //     "Blizzard(Attack7)", 
+    //     "QuickAttack(Attack11/Attack12)",
+    //     "Altar_OnlyEasier",
+    //     "Finisher_Easier(Attack13)",
+    //     "BigBlackHole(Attack3)"
+    // };
+
+    // private static Dictionary<string, MonsterStateGroup> MonsterStateGroups = new Dictionary<string, MonsterStateGroup>();
 
     private bool HPUpdated = false;
     public static bool phase2 = false;
@@ -46,23 +83,6 @@ public class EnlightenedJi : BaseUnityPlugin {
     System.Random random = new System.Random();
 
     // #region Attacks BossGeneralState
-    BossGeneralState DivinationFreeZoneBossGeneralState = null!;
-    BossGeneralState FlyingProjectilesBossGeneralState = null!;
-    BossGeneralState BlackHoleAttackBossGeneralState = null!;
-    BossGeneralState SetLaserAltarsBossGeneralState = null!;
-    BossGeneralState SuckSwordBossGeneralState = null!;
-    BossGeneralState TeleportSwordSmashBossGeneralState = null!;
-    BossGeneralState SwordBlizzardBossGeneralState = null!;
-    // BossGeneralState DivinationFreeZoneEndlessBossGeneralState = null!;
-    BossGeneralState GroundSwordBossGeneralState = null!;
-    BossGeneralState SmallBlackHoleBossGeneralState = null!;
-    BossGeneralState ShortFlyingSwordBossGeneralState = null!;
-    BossGeneralState QuickHorizontalDoubleSwordBossGeneralState = null!;
-    BossGeneralState QuickTeleportSwordBossGeneralState = null!;
-    BossGeneralState LaserAltarCircleBossGeneralState = null!;
-    BossGeneralState HealthAltarBossGeneralState = null!;
-    BossGeneralState DivinationJumpKickedBossGeneralState = null!;
-
     BossGeneralState HurtBossGeneralState = null!;
     BossGeneralState BigHurtBossGeneralState = null!;
     // #endregion
@@ -136,30 +156,40 @@ public class EnlightenedJi : BaseUnityPlugin {
                 if (JiMonster.currentMonsterState == PhaseChangeState) {
                     phase2 = true;
                 } 
-                phasesFromBlackHole = JiMonster.currentMonsterState == SmallBlackHoleBossGeneralState ? 0 : (phasesFromBlackHole + 1);
+                phasesFromBlackHole = JiMonster.currentMonsterState == BossGeneralStates[10] ? 0 : (phasesFromBlackHole + 1);
+                ToastManager.Toast(phase2);
             }
         } 
+    }
+
+    private List<BossGeneralState> GetIndices(int[] indices)
+    {
+        List<BossGeneralState> pickedStates = new List<BossGeneralState>();
+        foreach (int i in indices)
+        {
+            pickedStates.Add(BossGeneralStates[i]);
+        }
+        return pickedStates;
     }
 
     private void JiSpeedChange() {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         if (!JiMonster) return;
 
-        if (JiMonster.currentMonsterState == SmallBlackHoleBossGeneralState || 
-        JiMonster.currentMonsterState == Engaging || 
-        JiMonster.currentMonsterState == DivinationJumpKickedBossGeneralState ||
-        JiMonster.currentMonsterState == HurtBossGeneralState ||
-        JiMonster.currentMonsterState == BigHurtBossGeneralState ||
-        JiMonster.currentMonsterState == JiStunState) 
+        if (GetIndices([10, 16]).Contains(JiMonster.currentMonsterState) || 
+        JiMonster.currentMonsterState == Engaging || JiMonster.currentMonsterState == HurtBossGeneralState ||
+        JiMonster.currentMonsterState == BigHurtBossGeneralState || JiMonster.currentMonsterState == JiStunState) 
         {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 3;
-        } else if (JiMonster.currentMonsterState == HealthAltarBossGeneralState) 
+        } else if (JiMonster.currentMonsterState == BossGeneralStates[15]) 
         {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 1;
         } else if (!phase2 && JiSpeedChangePhase1()) {
             return;
         } else if (phase2 && JiSpeedChangePhase2()) {
             return;
+        } else if (JiMonster.LastClipName == "PostureBreak") {
+            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.2f;
         } else {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value;
         }
@@ -168,16 +198,17 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private bool JiSpeedChangePhase1() {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
-        if ((JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak") && (
-            JiMonster.currentMonsterState == ShortFlyingSwordBossGeneralState ||
-            JiMonster.currentMonsterState == QuickHorizontalDoubleSwordBossGeneralState ||
-            JiMonster.currentMonsterState == LaserAltarCircleBossGeneralState)) 
+
+        // Sneak Attack Speed Up
+        if ((JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak") && 
+            GetIndices([11, 12, 14]).Contains(JiMonster.currentMonsterState))
         {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2;
-        } else if (JiMonster.currentMonsterState == QuickTeleportSwordBossGeneralState && 
-            (JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak") || 
-            (randomNum % 2 == 0 && (JiMonster.currentMonsterState == ShortFlyingSwordBossGeneralState 
-                || JiMonster.currentMonsterState == SuckSwordBossGeneralState))){
+        } else if ((JiMonster.currentMonsterState == BossGeneralStates[13] && 
+            (JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak")) || 
+            (randomNum % 2 == 0 && GetIndices([11, 5]).Contains(JiMonster.currentMonsterState)))
+        {
+            ToastManager.Toast(JiMonster.currentMonsterState);
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.5f;
         } else {
             return false;
@@ -187,24 +218,21 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private bool JiSpeedChangePhase2() {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
-        if (JiMonster.currentMonsterState == BlackHoleAttackBossGeneralState) {
+        if (JiMonster.currentMonsterState == BossGeneralStates[3]) {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2;
 
         // Sneak Attack Speed Up
-        } else if ((JiMonster.LastClipName == "Attack13" || 
-            JiMonster.LastClipName == "PostureBreak" || 
-            JiMonster.LastClipName == "Attack6") &&
-            JiMonster.currentMonsterState != QuickTeleportSwordBossGeneralState && 
-            JiMonster.currentMonsterState != TeleportSwordSmashBossGeneralState)
+        } else if ((JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak" || 
+            JiMonster.LastClipName == "Attack6") && !(GetIndices([6, 13]).Contains(JiMonster.currentMonsterState)))
         {
-            if (JiMonster.currentMonsterState == LaserAltarCircleBossGeneralState) {
+            if (JiMonster.currentMonsterState == BossGeneralStates[14]) {
                 JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2f;
             } else {
                JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.65f;
             }
 
         // Hard Altar Attack Speed Up
-        } else if (JiMonster.currentMonsterState == SetLaserAltarsBossGeneralState && phasesFromBlackHole > 6) 
+        } else if (JiMonster.currentMonsterState == BossGeneralStates[4] && phasesFromBlackHole > 6) 
         {
             updateCounter++;
             if (updateCounter < 500) {
@@ -214,23 +242,19 @@ public class EnlightenedJi : BaseUnityPlugin {
             }
         
         // Blizzard Attack Speed up
-        } else if (JiMonster.currentMonsterState == SwordBlizzardBossGeneralState &&
+        } else if (JiMonster.currentMonsterState == BossGeneralStates[7] &&
             GetCurrentSequence() != AttackSequence2_QuickToBlizzardGroupSequence) 
         {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.65f;
 
         // Opening Sequence Sword Attack Speed Up
         } else if (GetCurrentSequence() == AttackSequence2_Opening &&
-            (JiMonster.currentMonsterState == ShortFlyingSwordBossGeneralState ||
-            JiMonster.currentMonsterState == QuickHorizontalDoubleSwordBossGeneralState ||
-            JiMonster.currentMonsterState == FlyingProjectilesBossGeneralState ||
-            JiMonster.currentMonsterState == GroundSwordBossGeneralState))
+            GetIndices([11, 12, 2, 9]).Contains(JiMonster.currentMonsterState))
         {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.25f;
         
         // Red/Green Attack Speed Up
-        } else if (randomNum % 3 == 0 && (JiMonster.currentMonsterState == TeleportSwordSmashBossGeneralState ||
-            JiMonster.currentMonsterState == QuickTeleportSwordBossGeneralState))
+        } else if (randomNum % 3 == 0 && GetIndices([6, 13]).Contains(JiMonster.currentMonsterState))
         {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.35f;
         } else if (randomNum % 2 == 0) {
@@ -251,19 +275,6 @@ public class EnlightenedJi : BaseUnityPlugin {
             ToastManager.Toast($"Set Ji Phase 1 HP to {JiMonster.postureSystem.CurrentHealthValue}");
         }
         JiMonster.monsterStat.Phase2HealthRatio = 2;
-    }
-
-    private void TestMethod() {
-        if (!enableSomethingConfig.Value) return;
-
-        ToastManager.Toast("Shortcut activateds");
-        Log.Info("Log messages will only show up in the logging console and LogOutput.txt");
-
-        // Sometimes variables aren't present in the title screen. Make sure to check for null to prevent crashes.
-        if (!Player.i) return;
-
-        var hasHat = Player.i.GetFieldValue<bool>("_hasHat"); // gets the field via reflection
-        Player.i.SetHasHat(!hasHat);
     }
 
     private MonsterStateGroupSequence GetCurrentSequence(){
@@ -298,6 +309,17 @@ public class EnlightenedJi : BaseUnityPlugin {
         jiAttackSequences2Path = jiBossPath + "MonsterCore/AttackSequenceModule/MonsterStateSequence_Phase2/";
         jiAttackGroupsPath = jiBossPath + "MonsterCore/AttackSequenceModule/MonsterStateGroupDefinition/";
 
+        for (int i = 1; i < Attacks.Length; i++)
+        {
+            BossGeneralStates[i] = getBossGeneralState(Attacks[i]);
+            Weights[i] = CreateWeight(BossGeneralStates[i]);
+        }
+
+        // foreach (string group in Groups)
+        // {
+        //     MonsterStateGroups.Add(string, )
+        // }
+
         AttackSequence1_FirstAttackGroupSequence = getGroupSequence1("MonsterStateGroupSequence1_FirstAttack_WithoutDivination");
         AttackSequence1_GroupSequence = getGroupSequence1("MonsterStateGroupSequence1");
         AttackSequence1_AltarGroupSequence = getGroupSequence1("MonsterStateGroupSequence1_WithAltar");
@@ -323,22 +345,6 @@ public class EnlightenedJi : BaseUnityPlugin {
 
         JiStunState = GameObject.Find($"{jiBossPath}States/PostureBreak/").GetComponent<PostureBreakState>();
         PhaseChangeState = GameObject.Find($"{jiBossPath}States/[BossAngry] BossAngry/").GetComponent<BossPhaseChangeState>();
-
-        DivinationFreeZoneBossGeneralState = getBossGeneralState("[1]Divination Free Zone");
-        FlyingProjectilesBossGeneralState = getBossGeneralState("[2][Short]Flying Projectiles");
-        BlackHoleAttackBossGeneralState = getBossGeneralState("[3][Finisher]BlackHoleAttack");
-        SetLaserAltarsBossGeneralState = getBossGeneralState("[4][Altar]Set Laser Altar Environment");
-        SuckSwordBossGeneralState = getBossGeneralState("[5][Short]SuckSword 往內");
-        TeleportSwordSmashBossGeneralState = getBossGeneralState("[6][Finisher]Teleport3Sword Smash 下砸");
-        SwordBlizzardBossGeneralState = getBossGeneralState("[7][Finisher]SwordBlizzard");
-        GroundSwordBossGeneralState = getBossGeneralState("[9][Short]GroundSword");
-        SmallBlackHoleBossGeneralState = getBossGeneralState("[10][Altar]SmallBlackHole");
-        ShortFlyingSwordBossGeneralState = getBossGeneralState("[11][Short]ShorFlyingSword");
-        QuickHorizontalDoubleSwordBossGeneralState = getBossGeneralState("[12][Short]QuickHorizontalDoubleSword");
-        QuickTeleportSwordBossGeneralState = getBossGeneralState("[13][Finisher]QuickTeleportSword 危戳");
-        LaserAltarCircleBossGeneralState = getBossGeneralState("[14][Altar]Laser Altar Circle");
-        DivinationJumpKickedBossGeneralState = getBossGeneralState("[16]Divination JumpKicked");
-        HealthAltarBossGeneralState = getBossGeneralState("[15][Altar]Health Altar");
         
         HurtBossGeneralState = GameObject.Find($"{jiBossPath}States/HurtState/").GetComponent<BossGeneralState>();
         BigHurtBossGeneralState = GameObject.Find($"{jiBossPath}States/Hurt_BigState").GetComponent<BossGeneralState>();
@@ -380,41 +386,45 @@ public class EnlightenedJi : BaseUnityPlugin {
         };
     }
 
+    private MonsterStateGroup CreateMonsterStateGroup(int[] AttacksList, string objectName)
+    {
+        List<Weight<MonsterState>> newStateWeightList = new List<Weight<MonsterState>>();
+        List<MonsterState> newQueue = new List<MonsterState>();
+        GameObject GO = new GameObject(objectName);
+        MonsterStateGroup newAttackGroup = new MonsterStateGroup();
+
+        foreach (int attackIndex in AttacksList)
+        {
+            newStateWeightList.Add(Weights[attackIndex]);
+            newQueue.Add(BossGeneralStates[attackIndex]);
+        }
+
+        MonsterStateWeightSetting newWeightSetting = new MonsterStateWeightSetting {
+            stateWeightList = newStateWeightList,
+            queue = newQueue
+        };
+        newAttackGroup = GO.AddComponent<MonsterStateGroup>();
+        newAttackGroup.setting = newWeightSetting;
+        return newAttackGroup;
+    }
+
     public void AlterAttacks(){
         if (AttackSequence1_FirstAttackGroupSequence.AttackSequence.Contains(SneakAttackStateGroup)) {
             return;
         }
         phase2 = false;
 
-        Weight<MonsterState> SmallBlackHoleWeight = CreateWeight(SmallBlackHoleBossGeneralState);
-        Weight<MonsterState> ShortFlyingSwordWeight = CreateWeight(ShortFlyingSwordBossGeneralState);
-        Weight<MonsterState> QuickHorizontalDoubleSwordWeight = CreateWeight(QuickHorizontalDoubleSwordBossGeneralState);
-        Weight<MonsterState> LaserAltarCircleWeight = CreateWeight(LaserAltarCircleBossGeneralState);
-        Weight<MonsterState> QuickTeleportSwordWeight = CreateWeight(QuickTeleportSwordBossGeneralState);
-        Weight<MonsterState> SuckSwordWeight = CreateWeight(SuckSwordBossGeneralState);
-        Weight<MonsterState> GroundSwordWeight = CreateWeight(GroundSwordBossGeneralState);
-        Weight<MonsterState> SwordBlizzardWeight = CreateWeight(SwordBlizzardBossGeneralState);
-        Weight<MonsterState> FlyingProjectilesWeight = CreateWeight(FlyingProjectilesBossGeneralState);
-        Weight<MonsterState> LaserAltarHardWeight = CreateWeight(SetLaserAltarsBossGeneralState);
-        Weight<MonsterState> Teleport3SwordSmashWeight = CreateWeight(TeleportSwordSmashBossGeneralState);
-
-        MonsterStateWeightSetting SurpriseAttackWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{
-            CreateWeight(ShortFlyingSwordBossGeneralState),
-            CreateWeight(QuickHorizontalDoubleSwordBossGeneralState),
-            CreateWeight(LaserAltarCircleBossGeneralState),
-            CreateWeight(QuickTeleportSwordBossGeneralState)
-            },
-            queue = new List<MonsterState>{
-                ShortFlyingSwordBossGeneralState, 
-                QuickHorizontalDoubleSwordBossGeneralState, 
-                LaserAltarCircleBossGeneralState,
-                QuickTeleportSwordBossGeneralState
-            }
-        };
-        GameObject go = new GameObject("MonsterStateGroup_SneakAttack(Attack 11/12/13/14)");
-        SneakAttackStateGroup = go.AddComponent<MonsterStateGroup>();
-        SneakAttackStateGroup.setting = SurpriseAttackWeightSetting;
+        SneakAttackStateGroup = CreateMonsterStateGroup([11, 12, 13, 14], "MonsterStateGroup_SneakAttack(Attack 11/12/13/14)");
+        BackAttackStateGroup = CreateMonsterStateGroup([5, 9], "MonsterStateGroup_BackAttack(Attack 5/9)");
+        LongerOrBlizardAttackStateGroup = CreateMonsterStateGroup([5, 9, 7], "MonsterStateGroup_LongerOrBlizardAttack(Attack 5/9/7)");
+        SwordOrLaserAttackStateGroup = CreateMonsterStateGroup([11, 12, 14], "MonsterStateGroup_SwordOrLaserAttack(Attack 11/12/14)");
+        SwordOrAltarAttackStateGroup = CreateMonsterStateGroup([10, 12, 14], "MonsterStateGroup_SwordOrAltarAttack(Attack10/12/14)");
+        LaserAltarHardAttackStateGroup = CreateMonsterStateGroup([4], "MonsterStateGroup_LaserAltarHardAttack(Attack4)");
+        DoubleTroubleAttackStateGroup = CreateMonsterStateGroup([2, 5, 9, 12], "MonsterStateGroup_DoubleTroubleAttack(Attack2/9/12/5)");
+        SneakAttack2StateGroup = CreateMonsterStateGroup([2, 4, 5, 9, 11, 12, 14], "MonsterStateGroup_SneakAttack2(Attack2/4/5/9/11/12/14)");
+        HardAltarOrEasyFinisherAttackStateGroup = CreateMonsterStateGroup([4, 13], "MonsterStateGroup_HardAltarOrEasyFinisher(Attack4/13)");
+        HardAltarOrHardFinisherAttackStateGroup = CreateMonsterStateGroup([4, 6], "MonsterStateGroup_HardAltarOrHardFinisher(Attack4/6)");
+   
 
         AddSneakAttackGroupToSequence(AttackSequence1_FirstAttackGroupSequence);
         AddSneakAttackGroupToSequence(AttackSequence1_GroupSequence);
@@ -426,59 +436,21 @@ public class EnlightenedJi : BaseUnityPlugin {
         OverwriteAttackGroupInSequence(AttackSequence1_GroupSequence, 2, SneakAttackStateGroup);
         OverwriteAttackGroupInSequence(AttackSequence1_FirstAttackGroupSequence, 1, SneakAttackStateGroup);
 
-        MonsterStateWeightSetting BackAttackWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{SuckSwordWeight, GroundSwordWeight},
-            queue = new List<MonsterState>{SuckSwordBossGeneralState, GroundSwordBossGeneralState}
-        };
-        GameObject go2 = new GameObject("MonsterStateGroup_BackAttack(Attack 5/9)");
-        BackAttackStateGroup = go2.AddComponent<MonsterStateGroup>();
-        BackAttackStateGroup.setting = BackAttackWeightSetting;
+
 
         InsertBackAttackGroupToSequence(AttackSequence1_GroupSequence, 4);
         InsertBackAttackGroupToSequence(AttackSequence1_AltarGroupSequence, 4);
 
-        MonsterStateWeightSetting LongerOrBlizardWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{
-                SuckSwordWeight, GroundSwordWeight, SwordBlizzardWeight
-            },
-            queue = new List<MonsterState>{
-                SuckSwordBossGeneralState, GroundSwordBossGeneralState, SwordBlizzardBossGeneralState
-            }
-        };
-        GameObject go3 = new GameObject("MonsterStateGroup_LongerOrBlizardAttack(Attack 5/9/7)");;
-        LongerOrBlizardAttackStateGroup = go3.AddComponent<MonsterStateGroup>();
-        LongerOrBlizardAttackStateGroup.setting = LongerOrBlizardWeightSetting;
+
 
         OverwriteAttackGroupInSequence(AttackSequence1_AltarGroupSequence, 2, LongerOrBlizardAttackStateGroup);
         InsertAttackGroupToSequence(AttackSequence1_FirstAttackGroupSequence, 3, LongerOrBlizardAttackStateGroup);
         InsertAttackGroupToSequence(SpecialHealthSequence, 2, LongerOrBlizardAttackStateGroup);
 
-        MonsterStateWeightSetting SwordOrLaserWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{ShortFlyingSwordWeight, QuickHorizontalDoubleSwordWeight, LaserAltarCircleWeight},
-            queue = new List<MonsterState>{ShortFlyingSwordBossGeneralState, QuickHorizontalDoubleSwordBossGeneralState, LaserAltarCircleBossGeneralState}
-        };
-        GameObject go4 = new GameObject("MonsterStateGroup_SwordOrLaserAttack(Attack 11/12/14)");
-        SwordOrLaserAttackStateGroup = go4.AddComponent<MonsterStateGroup>();
-        SwordOrLaserAttackStateGroup.setting = SwordOrLaserWeightSetting;
         OverwriteAttackGroupInSequence(AttackSequence1_SmallBlackHoleGroupSequence, 2, SwordOrLaserAttackStateGroup);
-        OverwriteAttackGroupInSequence(AttackSequence1_SmallBlackHoleGroupSequence, 3, LongerAttackStateGroup);
-
-        MonsterStateWeightSetting SwordOrAltarWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{SmallBlackHoleWeight, QuickHorizontalDoubleSwordWeight, LaserAltarCircleWeight},
-            queue = new List<MonsterState>{SmallBlackHoleBossGeneralState, QuickHorizontalDoubleSwordBossGeneralState, LaserAltarCircleBossGeneralState}
-        };
-        GameObject go6 = new GameObject("MonsterStateGroup_SwordOrAltarAttack(Attack10/12/14)");
-        SwordOrAltarAttackStateGroup = go6.AddComponent<MonsterStateGroup>();
-        SwordOrAltarAttackStateGroup.setting = SwordOrAltarWeightSetting;
+        OverwriteAttackGroupInSequence(AttackSequence1_SmallBlackHoleGroupSequence, 3, LongerAttackStateGroup);    
         InsertAttackGroupToSequence(AttackSequence1_QuickToBlizzardGroupSequence, 1, SwordOrAltarAttackStateGroup);
 
-        MonsterStateWeightSetting LaserAltarHardWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{LaserAltarHardWeight},
-            queue = new List<MonsterState>{SetLaserAltarsBossGeneralState}
-        };
-        GameObject go7 = new GameObject("MonsterStateGroup_LaserAltarHardAttack(Attack4)");
-        LaserAltarHardAttackStateGroup = go7.AddComponent<MonsterStateGroup>();
-        LaserAltarHardAttackStateGroup.setting = LaserAltarHardWeightSetting;
 
         InsertAttackGroupToSequence(AttackSequence2_Opening, 1, LaserAltarHardAttackStateGroup);
         InsertAttackGroupToSequence(AttackSequence2_Opening, 2, BlizzardAttackStateGroup);
@@ -486,45 +458,15 @@ public class EnlightenedJi : BaseUnityPlugin {
         InsertAttackGroupToSequence(AttackSequence2_Opening, 4, SmallBlackHoleMonsterStateGroup);
         InsertAttackGroupToSequence(AttackSequence2_Opening, 5, LaserAltarEasyAttackStateGroup);
 
-        MonsterStateWeightSetting DoubleTroubleWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{
-                FlyingProjectilesWeight, GroundSwordWeight, QuickHorizontalDoubleSwordWeight, SuckSwordWeight
-            },
-            queue = new List<MonsterState>{
-                FlyingProjectilesBossGeneralState, GroundSwordBossGeneralState, QuickHorizontalDoubleSwordBossGeneralState, SuckSwordBossGeneralState
-            }
-        };
-        GameObject go5 = new GameObject("MonsterStateGroup_DoubleTroubleAttack(Attack2/9/12/5)");
-        DoubleTroubleAttackStateGroup = go5.AddComponent<MonsterStateGroup>();
-        DoubleTroubleAttackStateGroup.setting = DoubleTroubleWeightSetting;
+
+
         InsertAttackGroupToSequence(AttackSequence2_Opening, 6, DoubleTroubleAttackStateGroup);
         InsertAttackGroupToSequence(AttackSequence2_Opening, 7, DoubleTroubleAttackStateGroup);
         InsertAttackGroupToSequence(AttackSequence2_Opening, 8, DoubleTroubleAttackStateGroup);
 
-        MonsterStateWeightSetting SneakAttack2WeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{
-                FlyingProjectilesWeight, LaserAltarHardWeight, SuckSwordWeight, GroundSwordWeight, ShortFlyingSwordWeight, QuickHorizontalDoubleSwordWeight, LaserAltarCircleWeight
-            },
-            queue = new List<MonsterState>{
-                FlyingProjectilesBossGeneralState, SetLaserAltarsBossGeneralState, SuckSwordBossGeneralState, GroundSwordBossGeneralState, ShortFlyingSwordBossGeneralState, QuickHorizontalDoubleSwordBossGeneralState, LaserAltarCircleBossGeneralState
-            }
-        };
-        GameObject go8 = new GameObject("MonsterStateGroup_SneakAttack2(Attack2/4/5/9/11/12/14)");
-        SneakAttack2StateGroup = go8.AddComponent<MonsterStateGroup>();
-        SneakAttack2StateGroup.setting = SneakAttack2WeightSetting;
+
         AddAttackGroupToSequence(AttackSequence2_Opening, SneakAttack2StateGroup);
 
-        MonsterStateWeightSetting HardAltarOrEasyFinisherWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{
-                LaserAltarHardWeight, QuickTeleportSwordWeight
-            },
-            queue = new List<MonsterState>{
-                SetLaserAltarsBossGeneralState, QuickTeleportSwordBossGeneralState
-            }
-        };
-        GameObject go9 = new GameObject("MonsterStateGroup_HardAltarOrEasyFinisher(Attack4/13)");
-        HardAltarOrEasyFinisherAttackStateGroup = go9.AddComponent<MonsterStateGroup>();
-        HardAltarOrEasyFinisherAttackStateGroup.setting = HardAltarOrEasyFinisherWeightSetting;
         InsertAttackGroupToSequence(AttackSequence2_Opening, 9, HardAltarOrEasyFinisherAttackStateGroup);
 
 
@@ -533,18 +475,6 @@ public class EnlightenedJi : BaseUnityPlugin {
         AddAttackGroupToSequence(AttackSequence2_SmallBlackHoleGroupSequence, SneakAttack2StateGroup);
         AddAttackGroupToSequence(AttackSequence2_QuickToBlizzardGroupSequence, SneakAttack2StateGroup);
         AddAttackGroupToSequence(AttackSequence2_QuickToBlackHoleGroupSequence, SneakAttack2StateGroup);
-
-        MonsterStateWeightSetting HardAltarOrHardFinisherWeightSetting = new MonsterStateWeightSetting{
-            stateWeightList = new List<Weight<MonsterState>>{
-                LaserAltarHardWeight, Teleport3SwordSmashWeight
-            },
-            queue = new List<MonsterState>{
-                SetLaserAltarsBossGeneralState, TeleportSwordSmashBossGeneralState
-            }
-        };
-        GameObject go10 = new GameObject("MonsterStateGroup_HardAltarOrHardFinisher(Attack4/6)");
-        HardAltarOrHardFinisherAttackStateGroup = go10.AddComponent<MonsterStateGroup>();
-        HardAltarOrHardFinisherAttackStateGroup.setting = HardAltarOrHardFinisherWeightSetting;
 
         InsertAttackGroupToSequence(AttackSequence2, 2, DoubleTroubleAttackStateGroup);
         InsertAttackGroupToSequence(AttackSequence2, 4, DoubleTroubleAttackStateGroup);
@@ -566,92 +496,10 @@ public class EnlightenedJi : BaseUnityPlugin {
         OverwriteAttackGroupInSequence(AttackSequence2_QuickToBlackHoleGroupSequence, 5, HardAltarOrHardFinisherAttackStateGroup);
     }
 
-    // Loads all the scenes contained in the AssetBundle, and spawn copies of their objects
-    private static IEnumerator SpawnEnemies(AssetBundle bundle) {
-        var sceneNames = bundle.GetAllScenePaths()
-            .Select(Path.GetFileNameWithoutExtension)
-            .ToList();
-
-        var start = Time.time;
-        var ops = sceneNames
-            .Select(sceneName => SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive))
-            .ToList();
-        foreach (var op in ops) yield return op;
-
-        Log.Info($"Loading took {Time.time - start}s");
-        bundle.Unload(false);
-
-        try {
-            List<GameObject> bosses = [];
-            foreach (var prefab in sceneNames.Select(SceneManager.GetSceneByName)
-                         .SelectMany(scene => scene.GetRootGameObjects())) {
-                ToastManager.Toast($"Spawning {prefab.name}");
-                var instantiation = ObjectUtils.InstantiateInit(prefab);
-                instantiation.SetActive(true);
-                instantiation.transform.position = Player.i.transform.position;
-                bosses.Add(instantiation);
-            }
-
-            yield return new WaitForSeconds(20);
-
-            bosses.ForEach(Destroy);
-        } finally {
-            sceneNames.ForEach(sceneName => SceneManager.UnloadSceneAsync(sceneName));
-        }
-    }
-
-
     private void OnDestroy() {
         // Make sure to clean up resources here to support hot reloading
         HPUpdated = false;
         phase2 = false;
         harmony.UnpatchSelf();
-    }
-
-
-
-
-    public static void DumpType(object obj)
-    {
-        if (obj == null)
-        {
-            Log.Info("Object is null, cannot inspect");
-            return;
-        }
-
-        Type type = obj.GetType();
-        Log.Info($"Dumping members of type: {type.FullName}");
-
-        BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-
-        // Fields
-        FieldInfo[] fields = type.GetFields(flags);
-        Log.Info($"Fields ({fields.Length}):");
-        foreach (var f in fields)
-        {
-            var value = f.GetValue(obj);
-            Log.Info($"  Field: {f.Name} (Type: {f.FieldType.Name}) = {value}");
-        }
-
-        // Properties
-        PropertyInfo[] props = type.GetProperties(flags);
-        Log.Info($"Properties ({props.Length}):");
-        foreach (var p in props)
-        {
-            // Optionally safe-get value
-            object val = null;
-            try { val = p.GetValue(obj); }
-            catch { val = " <unreadable> "; }
-            Log.Info($"  Property: {p.Name} (Type: {p.PropertyType.Name}) = {val}");
-        }
-
-        // Methods
-        MethodInfo[] methods = type.GetMethods(flags);
-        Log.Info($"Methods ({methods.Length}):");
-        foreach (var m in methods)
-        {
-            if (m.IsSpecialName) continue;  // skip property accessors, etc
-            Log.Info($"  Method: {m.Name} (Return: {m.ReturnType.Name})");
-        }
     }
 }
