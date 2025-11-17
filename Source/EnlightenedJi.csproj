@@ -42,6 +42,9 @@
         <Reference Include="RubyTextMeshPro">
             <HintPath>$(DLLPath)/RubyTextMeshPro.dll</HintPath>
         </Reference>
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>$(DLLPath)/Unity.TextMeshPro.dll</HintPath>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>

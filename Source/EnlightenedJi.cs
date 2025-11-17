@@ -134,6 +134,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     AttackSequenceModule attackSequenceModule = null!;
 
     RubyTextMeshProUGUI BossName = null!;
+    RubyTextMeshPro PhaseTransitionText = null!;
 
     private void Awake() {
         Log.Init(Logger);
@@ -339,8 +340,9 @@ public class EnlightenedJi : BaseUnityPlugin {
     }
 
     public void GetAttackGameObjects(){
+        string GeneralBossFightPath = "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/";
 
-        jiBossPath = "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/";
+        jiBossPath = GeneralBossFightPath + "LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/";
 
         jiAttackStatesPath = jiBossPath + "States/Attacks/";
         jiAttackSequences1Path = jiBossPath + "MonsterCore/AttackSequenceModule/MonsterStateSequence_Phase1/";
@@ -352,11 +354,6 @@ public class EnlightenedJi : BaseUnityPlugin {
             BossGeneralStates[i] = getBossGeneralState(Attacks[i]);
             Weights[i] = CreateWeight(BossGeneralStates[i]);
         }
-
-        // foreach (string group in Groups)
-        // {
-        //     MonsterStateGroups.Add(string, )
-        // }
 
         AttackSequence1_FirstAttackGroupSequence = getGroupSequence1("MonsterStateGroupSequence1_FirstAttack_WithoutDivination");
         AttackSequence1_GroupSequence = getGroupSequence1("MonsterStateGroupSequence1");
@@ -389,9 +386,10 @@ public class EnlightenedJi : BaseUnityPlugin {
         Engaging = GameObject.Find($"{jiBossPath}States/1_Engaging").GetComponent<StealthEngaging>();
 
         attackSequenceModule = GameObject.Find($"{jiBossPath}MonsterCore/AttackSequenceModule/").GetComponent<AttackSequenceModule>();
-        // ToastManager.Toast("test");
 
         BossName = GameObject.Find("GameCore(Clone)/RCG LifeCycle/UIManager/GameplayUICamera/MonsterHPRoot/BossHPRoot/UIBossHP(Clone)/Offset(DontKeyAnimationOnThisNode)/AnimationOffset/BossName").GetComponent<RubyTextMeshProUGUI>();
+
+        PhaseTransitionText = GameObject.Find(GeneralBossFightPath + "[CutScene]BossAngry_Cutscene/BubbleRoot/SceneDialogueNPC/BubbleRoot/DialogueBubble/Text").GetComponent<RubyTextMeshPro>();
 
     }
 
@@ -460,7 +458,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             return;
         }
         phase2 = false;
-
+        HurtBossGeneralState.enabled = false;
         // Custom Attack Groups
         SneakAttackStateGroup = CreateMonsterStateGroup([10, 11, 12, 13, 14], "MonsterStateGroup_SneakAttack(Attack 10/11/12/13/14)");
         BackAttackStateGroup = CreateMonsterStateGroup([5, 9], "MonsterStateGroup_BackAttack(Attack 5/9)");
