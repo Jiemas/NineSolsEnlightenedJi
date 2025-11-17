@@ -72,22 +72,23 @@ public class EnlightenedJi : BaseUnityPlugin {
       "THAT PIPE OF YOURS, I WONDER HOW FAR YOU COULD HAVE GOTTEN WITHOUT IT?",
       "THE THINGS YOU DO FOR POWER, YI! SURELY APE MAN FLUIDS CANNOT BE THAT GOOD...",
       "ENDURE WHAT OTHERS CANNOT!",
-      "ONLY NOW DO I REALIZE, LEAR ONCE SPOKE OF YOU. A MIGHTY FIANGSHI ALBEIT OF SHORT STATURE. HOW DID I NOT SEE IT UNTIL NOW?",
+      "ONLY NOW DO I REALIZE, LEAR ONCE SPOKE OF YOU. A MIGHTY FIANGSHI ALBEIT OF SHORT STATURE.",
       "LEAR WAS RIGHT AFTERALL, WAS HE NOT? TIANHUO, A PRODUCT OF SOLARIAN TECHNOLOGY AND ARROGANCE...",
       "I ENVY YOU, YI. TO STILL HAVE LOVED ONES TO MOURN YOUR LOSS...",
       "WHY AM I ATTACKING YOU, YI? HOW ELSE WILL I GET MY CURTAIN CALL?",
       "I THOUGHT MY END WOULD BE GRAND... AND YET YOUR FIREWORK WILL BE THE GRANDEST OF THEM ALL",
-      "THIS GROTTO, YOU WILL TAKE CARE OF IT FOR ME, WILL YOU NOT? ...HAHA, I ONLY JEST. I KNOW PRECISELY WHAT WILL HAPPEN TO THIS PLACE.",
+      "THIS GROTTO, YOU WILL TAKE CARE OF IT FOR ME, WILL YOU NOT? ...HAHA, I ONLY JEST.",
       "MY LONG AWAITED DEATH IS UPON US. I HOPE YOU ENJOY MY SWAN SONG... OR SURVIVE IT RATHER.",
       "THAT HEART OF YOURS IS JUST AS MUCH A MYSTERY AS MY OWN ABILITIES. FUSANG TRULY CHERISHES YOU...",
-      "I DO NOT BLAME EIGONG. SOLARIAN'S ARROGANCE HAS GONE ON FOR FAR TOO LONG AND DESTINY WOULD HAVE SIMPLY CHOSEN ANOTHER AGENT.",
+      "I DO NOT BLAME EIGONG. DESTINY WOULD HAVE SIMPLY CHOSEN ANOTHER AGENT.",
       "YOU GAVE THE SHEET MUSIC TO AN APE MAN CHILD? DEATH TRULY HAS CHANGED YOU.",
       "YOU ARE REARING AN APE MAN CHILD? SURELY IT DOES NOT KNOW WHAT ELSE YOU HAVE DONE?",
       "TO THINK, THE FUTURE OF THE SOLARIANS IS TO BE MERE PETS TO THE APE MEN. DESTINY TRULY HAS A SENSE OF HUMOUR!",
       "COME AND BEHOLD, MY FINAL MOMENTS!",
-      "I AM AWARE, THAT ALL OF THIS AROUND US, THIS IS JUST A MEMORY. THIS FIGHT? A SIMPLE PASTTIME FOR BEINGS FAR GREATER THAN WE COULD IMAGINE.",
+      "I AM AWARE, THAT ALL OF THIS AROUND US, THIS IS JUST A MEMORY.",
       "IT IS QUITE EMBARRASSING, IS IT NOT? THIS RIDICULOUS TITLE OF MINE...",
-      "I AM QUITE GLAD I DECIDED TO REREAD THE HEXAGRAMS. OTHERWISE, I WOULD HAVE HELD BACK FAR MORE THAN I NEEDED TO!"
+      "I AM QUITE GLAD I DECIDED TO REREAD THE HEXAGRAMS. OTHERWISE, I WOULD HAVE HELD BACK FAR MORE THAN I NEEDED TO!",
+      "SURELY, YOU MUST BE AWARE, THIS FIGHT? A SIMPLE PASTTIME FOR BEINGS FAR GREATER THAN WE COULD IMAGINE."
     ];
     
     private static string[] meme_quotes = [
@@ -120,6 +121,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     int updateCounter = 0;
     private int randomNum = 0;
     int phasesFromBlackHole = 0;
+    bool firstMessage = true;
 
     System.Random random = new System.Random();
 
@@ -203,7 +205,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
 
         if (JiMonster.currentMonsterState == PhaseChangeState) {
-            if (updateCounter < 50)
+            if (updateCounter < 100)
             {
                 updateCounter++;
             }
@@ -213,18 +215,31 @@ public class EnlightenedJi : BaseUnityPlugin {
             }
         } 
 
-        if (JiMonster && temp != JiMonster.currentMonsterState.ToString()) {
+        if (JiMonster && temp != JiMonster.currentMonsterState.ToString())
+        {
             temp = JiMonster.currentMonsterState.ToString();
             randomNum = random.Next();
-            if (JiMonster.currentMonsterState == PhaseChangeState) {
+            if (JiMonster.currentMonsterState == PhaseChangeState)
+            {
                 phase2 = true;
                 OverwriteAttackGroupInSequence(SpecialHealthSequence, 5, SneakAttack2StateGroup);
+                HandlePhaseTransitionText();
             }
             phasesFromBlackHole = JiMonster.currentMonsterState == BossGeneralStates[10] ? 0 : (phasesFromBlackHole + 1);
-            ToastManager.Toast(JiMonster.currentMonsterState);
-            ToastManager.Toast(GetCurrentSequence());
-            ToastManager.Toast("");
+            // ToastManager.Toast(JiMonster.currentMonsterState);
+            // ToastManager.Toast(GetCurrentSequence());
+            // ToastManager.Toast("");
         }
+    }
+
+    private void HandlePhaseTransitionText()
+    {
+        if (firstMessage)
+        {
+            firstMessage = false;
+            return;
+        }
+        PhaseTransitionText.text = randomNum % 99 < 5 ? meme_quotes[randomNum % (meme_quotes.Length)] : lore_quotes[randomNum % (lore_quotes.Length)];
     }
 
     private List<BossGeneralState> GetIndices(int[] indices)
@@ -581,6 +596,8 @@ public class EnlightenedJi : BaseUnityPlugin {
         // Make sure to clean up resources here to support hot reloading
         HPUpdated = false;
         phase2 = false;
+        updateCounter = 0;
+        firstMessage = true;
         harmony.UnpatchSelf();
     }
 }
