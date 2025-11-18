@@ -412,6 +412,10 @@ public class EnlightenedJi : BaseUnityPlugin {
             BossGeneralStates[i] = getBossGeneralState(Attacks[i]);
             Weights[i] = CreateWeight(BossGeneralStates[i]);
         }
+        for (int i = 0; i < SequenceStrings1.Length; i++)
+        {
+            Sequences1[i] = getGroupSequence1($"MonsterStateGroupSequence1{SequenceStrings1[i]}");
+        }
 
         AttackSequence1_FirstAttackGroupSequence = getGroupSequence1("MonsterStateGroupSequence1_FirstAttack_WithoutDivination");
         AttackSequence1_GroupSequence = getGroupSequence1("MonsterStateGroupSequence1");
@@ -531,7 +535,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         LaserAltarOrFinisherAttackStateGroup = CreateMonsterStateGroup([4, 6, 13, 14], "MonsterStateGroup_LaserAltarOrFinisher(Attack 4/6/13/14)");
 
         // Phase 1 Sequence Attack Modifications
-        ModifySequence(AttackSequence1_GroupSequence, [SneakAttackStateGroup], 
+        ModifySequence(Sequences1[Default], [SneakAttackStateGroup], 
             new (MonsterStateGroup group, int index)[] {(SneakAttackStateGroup, 2), (FinisherHardOrEasierAttackStateGroup, 4)}, 
             new (MonsterStateGroup group, int index)[] {(BackAttackStateGroup, 4)}
         );
