@@ -416,6 +416,14 @@ public class EnlightenedJi : BaseUnityPlugin {
         {
             Sequences1[i] = getGroupSequence1($"MonsterStateGroupSequence1{SequenceStrings1[i]}");
         }
+        for (int i = 0; i < SequenceStrings2.Length; i++)
+        {
+            if (SequenceStrings2[i] is null) continue;
+            Sequences2[i] = getGroupSequence2($"MonsterStateGroupSequence1{SequenceStrings2[i]}");
+        }
+        Sequences2[Health] = GameObject.Find(
+            $"{jiBossPath}MonsterCore/AttackSequenceModule/SpecialHealthSequence(Jee_Divination_Logic)")
+            .GetComponent<MonsterStateGroupSequence>();
 
         AttackSequence1_FirstAttackGroupSequence = getGroupSequence1("MonsterStateGroupSequence1_FirstAttack_WithoutDivination");
         AttackSequence1_GroupSequence = getGroupSequence1("MonsterStateGroupSequence1");
