@@ -115,6 +115,8 @@ public class EnlightenedJi : BaseUnityPlugin {
     private static RubyTextMeshProUGUI BossName = null!;
     private static RubyTextMeshPro PhaseTransitionText = null!;
 
+    private static MonsterHurtInterrupt HurtInterrupt = null!;
+
     private static string[] lore_quotes = [
       "IT'S TIME TO END THIS!",
       "HEROES ARE FORGED IN AGONY, YI!",
@@ -229,7 +231,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             firstMessage = false;
             return;
         }
-        PhaseTransitionText.text = randomNum % 99 < 5 ? meme_quotes[randomNum % (meme_quotes.Length)] : lore_quotes[randomNum % (lore_quotes.Length)];
+        PhaseTransitionText.text = randomNum % 99 < 5 ? meme_quotes[random.Next() % (meme_quotes.Length)] : lore_quotes[random.Next() % (lore_quotes.Length)];
     }
 
     private List<BossGeneralState> GetIndices(int[] indices)
@@ -435,6 +437,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         PhaseTransitionText = GameObject.Find(GeneralBossFightPath + 
             "[CutScene]BossAngry_Cutscene/BubbleRoot/SceneDialogueNPC/BubbleRoot/DialogueBubble/Text")
             .GetComponent<RubyTextMeshPro>();
+        HurtInterrupt = GameObject.Find($"{jiBossPath}MonsterCore/Animator(Proxy)/Animator/LogicRoot/HurtInterrupt").GetComponent<MonsterHurtInterrupt>();
     }
 
     private void OverwriteAttackGroupInSequence(MonsterStateGroupSequence sequence, int index, MonsterStateGroup newGroup)
@@ -508,6 +511,9 @@ public class EnlightenedJi : BaseUnityPlugin {
         }
         phase2 = false;
         // HurtBossGeneralState.enabled = false; TODO CHECK IF THERE IS PROPERTY THAT ACCOUNTS FOR HURT STATES IN NEW STATE GROUPS
+        // BossGeneralStates[Hurt].enabled = false;
+        // BossGeneralStates[BigHurt].enabled = false;
+        HurtInterrupt.enabled = false;
 
         // Custom Attack Groups
         int i = ExistingGroupPairs.Length + 2;
