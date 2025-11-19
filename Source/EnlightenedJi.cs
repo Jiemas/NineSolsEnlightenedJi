@@ -99,6 +99,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     private static string temp = "";
 
     private static int updateCounter = 0;
+    private static int delay = 0;
     private static int randomNum = 0;
     private static int phasesFromBlackHole = 0;
     private static bool firstMessage = true;
@@ -197,15 +198,16 @@ public class EnlightenedJi : BaseUnityPlugin {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
 
         if (JiMonster.currentMonsterState == PhaseChangeState) {
-            if (updateCounter < 100)
+            if (delay < 100)
             {
-                updateCounter++;
+                delay++;
             }
             else {
-                updateCounter = 0;
                 BossName.text = "The Kunlun Immortal";
             }
-        } 
+        } else {
+            delay = 0;
+        }
 
         if (JiMonster && temp != JiMonster.currentMonsterState.ToString())
         {
@@ -471,18 +473,18 @@ public class EnlightenedJi : BaseUnityPlugin {
     {
         List<Weight<MonsterState>> newStateWeightList = new List<Weight<MonsterState>>();
         List<MonsterState> newQueue = new List<MonsterState>();
+        List<MonsterState> newInitQueue = new List<MonsterState>();
         GameObject GO = new GameObject($"{objectName}");
         MonsterStateGroup newAttackGroup = new MonsterStateGroup();
 
         foreach (int attackIndex in AttacksList)
         {
             newStateWeightList.Add(Weights[attackIndex]);
-            newQueue.Add(BossGeneralStates[attackIndex]);
+            // newQueue.Add(BossGeneralStates[attackIndex]);
         }
 
         MonsterStateWeightSetting newWeightSetting = new MonsterStateWeightSetting {
-            stateWeightList = newStateWeightList,
-            queue = newQueue
+            stateWeightList = newStateWeightList, queue = new List<MonsterState>(), customizedInitQueue = new List<MonsterState>()
         };
         newAttackGroup = GO.AddComponent<MonsterStateGroup>();
         newAttackGroup.setting = newWeightSetting;
