@@ -166,7 +166,8 @@ public class EnlightenedJi : BaseUnityPlugin {
       "THIS FIGHT WAS EASIER BEFORE? SURELY THAT IS JUST YOUR MEMORY FAILING YOU!",
       "ARE YOU HAVING A BAD TIME?",
       "REMEMBER, ITS OKAY TO TAKE BREAKS!",
-      "YOU MAY BE ABLE TO BEAT ME, BUT CAN YOU DO IT HITLESS?"
+      "YOU MAY BE ABLE TO BEAT ME, BUT CAN YOU DO IT HITLESS?",
+      "PARRY THIS YOU FILTY CASUAL!"
     ];
 
 
@@ -255,7 +256,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             firstMessage = false;
             return;
         }
-        PhaseTransitionText.text = randomNum % 99 < 5 ? meme_quotes[random.Next() % (meme_quotes.Length)] : lore_quotes[random.Next() % (lore_quotes.Length)];
+        PhaseTransitionText.text = randomNum % 4 == 0 ? meme_quotes[random.Next() % (meme_quotes.Length)] : lore_quotes[random.Next() % (lore_quotes.Length)];
     }
 
     private List<BossGeneralState> GetIndices(int[] indices)

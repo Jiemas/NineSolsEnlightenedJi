@@ -90,6 +90,7 @@ More info on modding is on the [Nine Sols Wiki Page on Modding](https://ninesols
    - Note that if the black hole has suddenly gone halfway into the ground, it can damage Yi again even if it has been unbounded countered
 - Being airborne during fast blizzard attacks allows for parries without needing to rapidly change orientation
 - Swift Descent Jade is especially useful in this fight as there are many attacks that require careful positioning and dashing
+   - With this jade equipped, Yi can perform an aeriel down dash through a laser circle without taking damage
 - A consistent ranged attack is helpful for destroying laser altars too far away when Yi's movement is prevented by a black hole
 - Ji is not stunned by a 5 qi charge full control unless while doing divination
 - Avoid trying to heal in the middle of an attack sequence unless the Quick Dose Jade is equipped
@@ -101,3 +102,4 @@ More info on modding is on the [Nine Sols Wiki Page on Modding](https://ninesols
 ## Acknowledgements
 - Code was written through heavy reference of MicheliniDev's Eigong Prime Mod, KaitoMajima's Promised Eigong Mod, and Jakob Hellermann's Example Mod.
 - The Unity Explorer Mod was essential to figuring out object paths and attack logic
+- Thanks to everyone in the modding discord for their comments and suggestions!
