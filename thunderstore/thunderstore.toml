@@ -4,7 +4,7 @@ schemaVersion = "0.0.1"
 [package]
 namespace = "Jiemas"
 name = "EnlightenedJi"
-versionNumber = "1.0.0"
+versionNumber = "1.0.2"
 description = "Mods Ji to be harder"
 websiteUrl = "https://github.com/Jiemas/nine-sols-modding"
 containsNsfwContent = false

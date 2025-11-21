@@ -3,7 +3,7 @@
         <AssemblyName>EnlightenedJi</AssemblyName>
         <Description>Mods Ji to be harder, heavily inspired by MicheleniDev's Eigong Prime</Description>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <PublishRelease>true</PublishRelease>
@@ -59,7 +59,7 @@
         <PackageReference Include="UnityEngine.Modules" Version="2022.3.18" IncludeAssets="compile" />
 
         <!-- enable below if you want to use the API -->
-        <PackageReference Include="NineSolsAPI" Version="1.2.3" />
+        <!-- <PackageReference Include="NineSolsAPI" Version="1.2.3" /> -->
         <!-- or locally <ProjectReference Include="../../NineSolsAPI/NineSolsAPI/NineSolsAPI.csproj" />-->
     </ItemGroup>
 

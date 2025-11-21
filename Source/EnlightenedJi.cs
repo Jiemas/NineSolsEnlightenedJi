@@ -5,8 +5,8 @@ using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
-using NineSolsAPI;
-using NineSolsAPI.Utils;
+// using NineSolsAPI;
+// using NineSolsAPI.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -101,6 +101,7 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private static int randomNum = 0;
     private static int phasesFromBlackHole = 0;
+    private static float animationSpeed = 1;
     private static bool firstMessage = true;
 
     private static System.Random random = new System.Random();
@@ -190,7 +191,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             phase2 = false;
             GetAttackGameObjects();
             AlterAttacks();
-            JiHPChange();
+            StartCoroutine(JiHPChange());
         }
     }
 
@@ -204,6 +205,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     }
 
     public void Update() {
+        
         if (SceneManager.GetActiveScene().name == "A10_S5_Boss_Jee") {
             HandleStateChange();
         } 
@@ -212,27 +214,37 @@ public class EnlightenedJi : BaseUnityPlugin {
     private void HandleStateChange() 
     {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
-
-        if (JiMonster is not null && temp != JiMonster.currentMonsterState.ToString())
+        if (JiMonster.monsterCore.AnimationSpeed != animationSpeed)
         {
-            temp = JiMonster.currentMonsterState.ToString();
-            randomNum = random.Next();
-
-            JiSpeedChange();
-
-            if (JiMonster.currentMonsterState == PhaseChangeState)
+            JiMonster.monsterCore.AnimationSpeed = animationSpeed;
+        }
+        if (JiMonster is not null) 
+        {
+            if (temp != JiMonster.currentMonsterState.ToString())
             {
-                phase2 = true;
-                OverwriteAttackGroupInSequence(Sequences2[Health], 6, Groups[SneakAttack2]);
-                HandlePhaseTransitionText();
-                StartCoroutine(delayTitleChange());
-            } else if (JiMonster.currentMonsterState == BossGeneralStates[1])
-            {
-                HurtInterrupt.enabled = true;
-            } else {
-                HurtInterrupt.enabled = false;
+                temp = JiMonster.currentMonsterState.ToString();
+                randomNum = random.Next();
+
+                // Logger.LogInfo(temp);
+                // Logger.LogInfo(GetCurrentSequence());
+                // Logger.LogInfo("");
+
+                JiSpeedChange();
+
+                if (JiMonster.currentMonsterState == PhaseChangeState)
+                {
+                    phase2 = true;
+                    OverwriteAttackGroupInSequence(Sequences2[Health], 6, Groups[SneakAttack2]);
+                    HandlePhaseTransitionText();
+                    StartCoroutine(delayTitleChange());
+                } else if (JiMonster.currentMonsterState == BossGeneralStates[1])
+                {
+                    HurtInterrupt.enabled = true;
+                } else {
+                    HurtInterrupt.enabled = false;
+                }
+                phasesFromBlackHole = JiMonster.currentMonsterState == BossGeneralStates[10] ? 0 : (phasesFromBlackHole + 1);
             }
-            phasesFromBlackHole = JiMonster.currentMonsterState == BossGeneralStates[10] ? 0 : (phasesFromBlackHole + 1);
         }
     }
 
@@ -264,18 +276,18 @@ public class EnlightenedJi : BaseUnityPlugin {
         JiMonster.currentMonsterState == Engaging || JiMonster.currentMonsterState == BossGeneralStates[Hurt] ||
         JiMonster.currentMonsterState == BossGeneralStates[BigHurt] || JiMonster.currentMonsterState == JiStunState) 
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 3;
+            animationSpeed = JiAnimatorSpeed.Value + 3;
         } else if (JiMonster.currentMonsterState == BossGeneralStates[15]) 
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 1;
+            animationSpeed = JiAnimatorSpeed.Value + 1;
         } else if (JiMonster.currentMonsterState == BossGeneralStates[3]) {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2;
+            animationSpeed = JiAnimatorSpeed.Value + 2;
         } else if (!phase2 && JiSpeedChangePhase1()) {
             return;
         } else if (phase2 && JiSpeedChangePhase2()) {
             return;
         } else {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value;
+            animationSpeed = JiAnimatorSpeed.Value;
         }
 
     }
@@ -287,33 +299,32 @@ public class EnlightenedJi : BaseUnityPlugin {
         if ((JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak") && 
             GetIndices([11, 12, 14]).Contains(JiMonster.currentMonsterState))
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2;
+            animationSpeed = JiAnimatorSpeed.Value + 2;
         
         // 2nd Finisher & Long Attack Speed Up
         } else if ((JiMonster.currentMonsterState == BossGeneralStates[13] && 
             (JiMonster.LastClipName == "Attack13" || JiMonster.LastClipName == "PostureBreak")) || 
             (randomNum % 2 == 0 && GetIndices([11, 5]).Contains(JiMonster.currentMonsterState)))
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.5f;
+            animationSpeed = JiAnimatorSpeed.Value + 0.5f;
+        
+        // Blizzard Random Speed Up
         } else if (randomNum % 2 == 0 && JiMonster.currentMonsterState == BossGeneralStates[7])
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.5f;
+            animationSpeed = JiAnimatorSpeed.Value + 0.5f;
+        
+        // Hard Laser Altar Speed Up
+        } else if (JiMonster.currentMonsterState == BossGeneralStates[4])
+        {
+            animationSpeed = JiAnimatorSpeed.Value + 1.55f;
 
         // Random Attack Speed Up
         } else if (randomNum % 3 == 0) {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.2f;
+            animationSpeed = JiAnimatorSpeed.Value + 0.2f;
         } else {
             return false;
         }
         return true;
-    }
-
-    private IEnumerator tempLaserAcceleration()
-    {
-        var JiMonster = MonsterManager.Instance.ClosetMonster;
-        JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 1.65f;
-        yield return new WaitForSeconds(1.25f);
-        // JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value;
     }
 
     private bool JiSpeedChangePhase2() {
@@ -324,48 +335,54 @@ public class EnlightenedJi : BaseUnityPlugin {
             JiMonster.LastClipName == "Attack6") && !(GetIndices([6, 13]).Contains(JiMonster.currentMonsterState)))
         {
             if (JiMonster.currentMonsterState == BossGeneralStates[14]) {
-                JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 2f;
+                animationSpeed = JiAnimatorSpeed.Value + 2f;
             } else {
-               JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.65f;
+               animationSpeed = JiAnimatorSpeed.Value + 0.65f;
             }
 
         // Hard Altar Attack Speed Up
         } else if (JiMonster.currentMonsterState == BossGeneralStates[4])
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 1.65f;
+            animationSpeed = JiAnimatorSpeed.Value + 1.65f;
 
         // Blizzard Attack Speed up
         } else if (JiMonster.currentMonsterState == BossGeneralStates[7]) 
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.7f;
+            animationSpeed = JiAnimatorSpeed.Value + 0.7f;
 
         // Opening Sequence Sword Attack Speed Up
         } else if (GetCurrentSequence() == Sequences2[Opening] &&
             GetIndices([11, 12, 2, 9]).Contains(JiMonster.currentMonsterState))
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.25f;
+            animationSpeed = JiAnimatorSpeed.Value + 0.25f;
         
         // Red/Green Attack Speed Up
         } else if (randomNum % 3 == 0 && GetIndices([6, 13]).Contains(JiMonster.currentMonsterState))
         {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.35f;
+            animationSpeed = JiAnimatorSpeed.Value + 0.35f;
         } else if (randomNum % 2 == 0) {
-            JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value + 0.3f;
+            animationSpeed = JiAnimatorSpeed.Value + 0.3f;
         } else {
             return false;
         }
         return true;
     }
 
-    private void JiHPChange() {
-        var baseHealthRef = AccessTools.FieldRefAccess<MonsterStat, float>("BaseHealthValue");
+    private IEnumerator JiHPChange() {
+        while (!MonsterManager.Instance.ClosetMonster)
+        {
+            yield return null;
+        }
         var JiMonster = MonsterManager.Instance.ClosetMonster;
-        if (!HPUpdated && JiMonster) {
+        var baseHealthRef = AccessTools.FieldRefAccess<MonsterStat, float>("BaseHealthValue");
+        if (!HPUpdated)
+        {
             baseHealthRef(JiMonster.monsterStat) = JiHPScale.Value / 1.35f;
             JiMonster.postureSystem.CurrentHealthValue = JiHPScale.Value;
-            HPUpdated = true;
-            Logger.LogInfo($"Set Ji Phase 1 HP to {JiMonster.postureSystem.CurrentHealthValue}");
         }
+        // baseHealthRef(JiMonster.monsterStat) = JiHPScale.Value / 1.35f;
+        // JiMonster.postureSystem.CurrentHealthValue = JiHPScale.Value;
+        Logger.LogInfo($"Ji Phase 1 HP at {JiMonster.postureSystem.CurrentHealthValue}");
         JiMonster.monsterStat.Phase2HealthRatio = 1.65f;
     }
 
@@ -402,7 +419,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         jiAttackSequences2Path = jiBossPath + "MonsterCore/AttackSequenceModule/MonsterStateSequence_Phase2/";
         jiAttackGroupsPath = jiBossPath + "MonsterCore/AttackSequenceModule/MonsterStateGroupDefinition/";
 
-        Logger.LogInfo("Getting Game Objects");
+        // Logger.LogInfo("Getting Game Objects");
 
         // Gathering BossGeneralStates & Other States
         for (int i = 1; i < Attacks.Length; i++)
@@ -416,7 +433,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         PhaseChangeState = GameObject.Find($"{jiBossPath}States/[BossAngry] BossAngry/").GetComponent<BossPhaseChangeState>();
         Engaging = GameObject.Find($"{jiBossPath}States/1_Engaging").GetComponent<StealthEngaging>();
 
-        Logger.LogInfo("Got BossGeneralStates");
+        // Logger.LogInfo("Got BossGeneralStates");
 
         // Gathering MonsterGroupStateSequences
         for (int i = 0; i < SequenceStrings1.Length; i++)
@@ -432,7 +449,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             $"{jiBossPath}MonsterCore/AttackSequenceModule/SpecialHealthSequence(Jee_Divination_Logic)")
             .GetComponent<MonsterStateGroupSequence>();
 
-        Logger.LogInfo("Got MonsterGroupStateSequences");
+        // Logger.LogInfo("Got MonsterGroupStateSequences");
 
         // Gathering existing MonsterGroupState
         int j = 0;
@@ -443,26 +460,20 @@ public class EnlightenedJi : BaseUnityPlugin {
         Groups[BigBlackHole] = Sequences2[Opening].AttackSequence[0];
         Groups[EasyOrHardFinisher] = Sequences2[Default].AttackSequence[5];
 
-        Logger.LogInfo("Got MonsterGroupStates");
+        // Logger.LogInfo("Got MonsterGroupStates");
 
         // Gathering Miscellaneous Object
         attackSequenceModule = GameObject.Find($"{jiBossPath}MonsterCore/AttackSequenceModule/").GetComponent<AttackSequenceModule>();
-
-        // BossName = GameObject.Find(
-        //     "GameCore(Clone)/RCG LifeCycle/UIManager/GameplayUICamera/MonsterHPRoot/BossHPRoot/UIBossHP(Clone)/Offset(DontKeyAnimationOnThisNode)/AnimationOffset/BossName")
-        //     .GetComponent<RubyTextMeshProUGUI>();
-
-        Logger.LogInfo("Got BossName");
         
         PhaseTransitionText = GameObject.Find(GeneralBossFightPath + 
             "[CutScene]BossAngry_Cutscene/BubbleRoot/SceneDialogueNPC/BubbleRoot/DialogueBubble/Text")
             .GetComponent<RubyTextMeshPro>();
 
-        Logger.LogInfo("Got Phase Transition Text");
+        // Logger.LogInfo("Got Phase Transition Text");
         
         HurtInterrupt = GameObject.Find($"{jiBossPath}MonsterCore/Animator(Proxy)/Animator/LogicRoot/HurtInterrupt").GetComponent<MonsterHurtInterrupt>();
 
-        Logger.LogInfo("Got attack game objects");
+        // Logger.LogInfo("Got attack game objects");
     }
 
     private void OverwriteAttackGroupInSequence(MonsterStateGroupSequence sequence, int index, MonsterStateGroup newGroup)
@@ -598,7 +609,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             new (int group, int index)[] {(EasyOrHardFinisher, 2), (EasyOrHardFinisher, 3), (EasyOrHardFinisher, 4)}, 
             new (int group, int index)[] {(HardLaserAltar, 2), (BigBlackHole, 3), (LongerAttack, 4), (HardLaserAltar, 5)}
         );
-        Logger.LogInfo("Altered Phase 1 and 2 Attack Sequences");
+        // Logger.LogInfo("Altered Phase 1 and 2 Attack Sequences");
     }
 
     private void OnDestroy()
