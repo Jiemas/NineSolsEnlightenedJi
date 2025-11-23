@@ -187,13 +187,10 @@ public class EnlightenedJi : BaseUnityPlugin {
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
         SceneManager.sceneLoaded += OnSceneLoaded;
 
-        // colorChange = new ColorChange();
-        
-
         string bundlePath = Path.Combine(Application.persistentDataPath, "mymodbundle");
         bundle = AssetBundle.LoadFromFile(bundlePath);
-        mat = bundle.LoadAsset<Material>("SpriteWithLut3D_Mat");
-        Logger.LogInfo("Got material from bundle!");
+        mat = bundle.LoadAsset<Material>("RBFMat");
+        ColorChange.RecolorSprite(mat);
 
         JiAnimatorSpeed = Config.Bind("General", "JiSpeed", 1.2f, "The speed at which Ji's attacks occur");
         JiHPScale = Config.Bind("General", "JiHPScale", 6500f, "The amount of Ji's HP in Phase 1 (Phase 2 HP is double this value)");
@@ -204,11 +201,8 @@ public class EnlightenedJi : BaseUnityPlugin {
         if (scene.name == "A10_S5_Boss_Jee")
         {
             phase2 = false;
-            // Logger.LogInfo("Test1");
-
-            // colorChange.RecolorSprite();
-            // Logger.LogInfo("Test2");
             jiSprite = ColorChange.getJiSprite();
+            
             GetAttackGameObjects();
             AlterAttacks();
             StartCoroutine(JiHPChange());
@@ -229,7 +223,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         if (SceneManager.GetActiveScene().name == "A10_S5_Boss_Jee") {
             HandleStateChange();
             jiSprite.material = mat;
-            Logger.LogInfo(jiSprite.material);
+            // Logger.LogInfo(jiSprite.material);
         } 
     }
 
