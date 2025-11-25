@@ -216,12 +216,32 @@ public class EnlightenedJi : BaseUnityPlugin {
         BossName.text = "The Kunlun Immortal";
     }
 
+    private static bool foo = true;
+
     public void Update() {
         
         if (SceneManager.GetActiveScene().name == "A10_S5_Boss_Jee") {
             HandleStateChange();
             ColorChange.updateJiSprite();
 
+            var greenEffect = GameObject.Find("A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Jee/MultiSpriteEffect_Prefab 識破提示Variant(Clone)");
+            if (greenEffect is not null)
+            {
+                greenEffect.SetActive(false);
+            }
+
+        // var laserCircle = GameObject.Find("CircularDamage(Clone)/Animator/Effect_BEAM/P_ScretTreePowerCIRCLE");
+        // ToastManager.Toast(laserCircle);
+        // if (laserCircle is not null && foo is true)
+        // {
+        //     laserCircle.AddComponent<_2dxFX_ColorChange>();
+        //     _2dxFX_ColorChange laserCircleHueValue = laserCircle.GetComponent<_2dxFX_ColorChange>();
+        //     laserCircleHueValue._HueShift = 130;
+        //     foo = false;
+        // }
+        // laserCircle.AddComponent<_2dxFX_ColorChange>();
+        // _2dxFX_ColorChange laserCircleHueValue = laserCircle.GetComponent<_2dxFX_ColorChange>();
+        // laserCircleHueValue._HueShift = 130;
             // Logger.LogInfo(jiSprite.material);
         } 
     }

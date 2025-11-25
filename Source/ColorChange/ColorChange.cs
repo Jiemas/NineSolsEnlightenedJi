@@ -10,46 +10,41 @@ namespace EnlightenedJi;
 //  C:/Users/Jiemas/AppData/LocalLow/RedCandleGames/NineSols
 // string spritePath = "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/";
 
+// light in staff tip during attack 6 and light in orb during attack 14 charging
+// A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Weapon/JeeStaffTip/Effect_BEAM/STPBALL/Light/
+
+// Might be the red laser circles
+// CircularDamage(Clone)/Animator/Effect_BEAM/P_ScretTreePowerCIRCLE/
+
 public class ColorChange {
     public static int lutSize = 16;
     public static Material material = null!;
+    private static int stayRange = 1;
+
+private static (float x, float y, float z)[] stayColors = new (float x, float y, float z)[]
+    {
+        // (79f, 193f, 129f), // Green Claws/Headband
+        // (186f, 240f, 227f), // Eye Blue 1
+        // (117f, 220f, 208f), // Eye Blue 2
+        // (192f, 247f, 237f), // Eye Blue 3
+    };
 
     private static ((float x, float y, float z) src, (float x, float y, float z) dst)[] colorPairs = new ((float x, float y, float z) src, (float x, float y, float z) dst)[]
     {
-        ((0f, 0f, 0f), (0f, 0f, 0f)),  // Black
-        ((104f, 24f, 23f), (37f, 44f, 31f)), // Cape Red -> Grey Black
-        ((228f, 190f, 106f), (233f, 238f, 236f)), // Robe Yellow -> Off-White
-        ((247f, 248f, 241f), (237f, 237f, 213f)), // Fur White -> Cream White
-        ((247f, 249f, 238f), (237f, 237f, 213f)), // Fur White -> Cream White
-        ((242f, 241f, 235f), (237f, 237f, 213f)), // Fur White -> Cream White
-        ((186f, 240f, 227f), (237f, 47f, 50f)), // Eye Baby Blue -> Purple Amethyst
-        // ((117f, 220f, 208f), (237f, 47f, 50f)), // Eye Blue -> Purple Amethyst
-        // ((192f, 247f, 237f), (237f, 47f, 50f)), // Eye White Blue -> Purple Amethyst
+        ((1f, 1f, 1f), (1f, 1f, 1f)),  // Black
+        ((247f, 248f, 241f), (247f, 248f, 241f)), // Fur White 
+        ((186f, 240f, 227f), (186f, 240f, 227f)), // Eye Baby Blue
         ((79f, 193f, 129f), (79f, 193f, 129f)), // Green Claws/Headband
+        ((104f, 24f, 23f), (37f, 44f, 31f)), // Cape Red -> Grey Black
+        ((228f, 190f, 106f), (128f, 128f, 128f)), // Robe Yellow -> Gray
         ((212f, 203f, 167f), (201f, 207f, 203f)) // Tan Robe Highlight -> Bone White
     };
 
-    private static Vector3[] srcColors = new Vector3[colorPairs.Length];
-    // {
-    //     (0f, 0f, 0f),
-    //     (104f, 24f, 23f),
-    //     (228f, 190f, 106f),
-    //     (247f, 248f, 241f),
-    //     (186f, 240f, 227f),
-    //     (117f, 220f, 208f),
-    //     (192f, 247f, 237f)
-    // };
+    private static Vector3[] srcColors = new Vector3[colorPairs.Length * 27];
 
-    private static Vector3[] dstColors = new Vector3[colorPairs.Length];
-    // {
-    //     (0f, 0f, 0f),
-    //     (37f, 44f, 31f),
-    //     (233f, 238f, 236f),
-    //     (237f, 237f, 213f),
-    //     (153f, 102f, 204f),
-    //     (153f, 102f, 204f),
-    //     (153f, 102f, 204f)
-    // };
+
+    private static Vector3[] dstColors = new Vector3[colorPairs.Length * 27];
+
 
     private static string spritePath = "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/";
     private static string[] jiSpritePaths = 
@@ -61,20 +56,32 @@ public class ColorChange {
         // "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/[CutScene]FirstTimeContact/DummyJeeAnimator/View/Jee/JeeSprite",
         // "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/[CutScene]SecondTimeContact/DummyJeeAnimator/View/Jee/JeeSprite",
         "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/[CutScene]BossAngry_Cutscene/[Timeline]/DummyJeeAnimator/View/Jee/JeeSprite",
+        "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/[CutScene]BossAngry_Cutscene/[Timeline]/DummyJeeAnimator/View/Jee/Cloak",
+        "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/[CutScene]BossAngry_Cutscene/[Timeline]/DummyJeeAnimator/View/Jee/Arm",
         "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/[CutScene]BossDying/[Timeline]/DummyJeeAnimator/View/Jee/JeeSprite",
+
         "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Jee/Cloak",
-        "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Jee/Arm"
+        "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Jee/Arm",
+        // "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Effect/Attack_TeleportSword/Sprite"
     };
     public static SpriteRenderer[] jiSprites = new SpriteRenderer[jiSpritePaths.Length];
 
-
     static private void initializeColors()
     {
-        int i = 0;
+        int index = 0;
         foreach (((float x, float y, float z) src, (float x, float y, float z) dst) in colorPairs)
         {
-            srcColors[i] = new Vector3(src.x, src.y, src.z);
-            dstColors[i++] = new Vector3(dst.x, dst.y, dst.z);
+            for (float i = -stayRange; i <= stayRange; i++)
+            {
+                for (float j = -stayRange; j <= stayRange; j++)
+                {
+                    for (float k = -stayRange; k <= stayRange; k++)
+                    {
+                        srcColors[index] = new Vector3(src.x + i, src.y + j, src.z + k);
+                        dstColors[index++] = new Vector3(dst.x + i, dst.y + j, dst.z + k);
+                    }
+                }
+            }
         }
     }
 
@@ -84,9 +91,12 @@ public class ColorChange {
         {
             jiSprites[i] = GameObject.Find(jiSpritePaths[i]).GetComponent<SpriteRenderer>();
         }
-        // string spritePath = "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/";
-        // jiSprite = GameObject.Find($"{spritePath}Jee/JeeSprite").GetComponent<SpriteRenderer>();
-        // return jiSprite;
+
+        var laserCircle = GameObject.Find("A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Weapon/Jee_Sitck/Effect/EffectSprite");
+        ToastManager.Toast(laserCircle);
+        laserCircle.AddComponent<_2dxFX_ColorChange>();
+        _2dxFX_ColorChange laserCircleHueValue = laserCircle.GetComponent<_2dxFX_ColorChange>();
+        laserCircleHueValue._HueShift = 130;
     }
 
     static public void InitializeMat(Material mat) {
@@ -103,8 +113,11 @@ public class ColorChange {
     {
         foreach (SpriteRenderer jiSprite in jiSprites)
         {
-            jiSprite.material = material;
+            if (jiSprite.material != material)
+            {  
+                jiSprite.material = material;
+            }
+            
         }
-        // jiSprite.material = material;
     }
 }
