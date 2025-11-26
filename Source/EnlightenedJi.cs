@@ -24,8 +24,8 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private Harmony harmony = null!;
 
-    private ConfigEntry<float> JiAnimatorSpeed = null!;
-    private ConfigEntry<float> JiHPScale = null!;
+    private static ConfigEntry<float> JiAnimatorSpeed = null!;
+    private static ConfigEntry<float> JiHPScale = null!;
 
     // private static SpriteRenderer jiSprite = null!;
     private static Material mat = null!;
@@ -122,6 +122,26 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private static MonsterHurtInterrupt HurtInterrupt = null!;
 
+    private static Dictionary<string, Func<string, float>> SpeedDict1 = new Dictionary<string, Func<string, float>>
+    {
+        {"[1]Divination Free Zone (BossGeneralState)", (lastClipName => JiAnimatorSpeed.Value)}
+        // "[2][Short]Flying Projectiles",
+        // "[3][Finisher]BlackHoleAttack",
+        // "[4][Altar]Set Laser Altar Environment",
+        // "[5][Short]SuckSword 往內",
+        // "[6][Finisher]Teleport3Sword Smash 下砸",
+        // "[7][Finisher]SwordBlizzard",
+        // "",
+        // "[9][Short]GroundSword",
+        // "[10][Altar]SmallBlackHole",
+        // "[11][Short]ShorFlyingSword",
+        // "[12][Short]QuickHorizontalDoubleSword",
+        // "[13][Finisher]QuickTeleportSword 危戳",
+        // "[14][Altar]Laser Altar Circle",
+        // "[15][Altar]Health Altar",
+        // "[16]Divination JumpKicked"
+    };
+
     private static string[] lore_quotes = [
       "IT'S TIME TO END THIS!",
       "HEROES ARE FORGED IN AGONY, YI!",
@@ -192,7 +212,21 @@ public class EnlightenedJi : BaseUnityPlugin {
 
         JiAnimatorSpeed = Config.Bind("General", "JiSpeed", 1.2f, "The speed at which Ji's attacks occur");
         JiHPScale = Config.Bind("General", "JiHPScale", 6500f, "The amount of Ji's HP in Phase 1 (Phase 2 HP is double this value)");
+
     }
+
+    // private IEnumerator AddToCompToCircularDamage(circleObj)
+    // {
+    //     GameObject CircularDamage = null!;
+    //     while (CircularDamage is null)
+    //     {
+    //         Logger.LogInfo("Looking for circular!");
+    //         CircularDamage = GameObject.Find("CircularDamage(Clone)");
+    //         yield return new WaitForSeconds(1.0f);
+    //     }
+    //     Logger.LogInfo("Added component!");
+    //     CircularDamage.AddComponent<DestroyOnDisable>();
+    // }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -221,9 +255,10 @@ public class EnlightenedJi : BaseUnityPlugin {
     public void Update() {
         
         if (SceneManager.GetActiveScene().name == "A10_S5_Boss_Jee") {
+            JiSpeedChange();
             HandleStateChange();
             ColorChange.updateJiSprite();
-
+            
             var greenEffect = GameObject.Find("A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Jee/MultiSpriteEffect_Prefab 識破提示Variant(Clone)");
             if (greenEffect is not null)
             {
@@ -260,18 +295,29 @@ public class EnlightenedJi : BaseUnityPlugin {
                 temp = JiMonster.currentMonsterState.ToString();
                 randomNum = random.Next();
 
-                // Logger.LogInfo(temp);
-                // Logger.LogInfo(GetCurrentSequence());
-                // Logger.LogInfo("");
+                Logger.LogInfo($"'{temp}'");
+                Logger.LogInfo(GetCurrentSequence());
+                Logger.LogInfo("");
 
-                JiSpeedChange();
+                // StopAllCoroutines();
+                // StartCoroutine(AddToCompToCircularDamage());
+                
 
                 if (JiMonster.currentMonsterState == PhaseChangeState)
                 {
                     phase2 = true;
-                    OverwriteAttackGroupInSequence(Sequences2[Health], 6, Groups[SneakAttack2]);
-                    HandlePhaseTransitionText();
-                    StartCoroutine(delayTitleChange());
+
+                // Find all active and inactive GameObjects and assets
+                GameObject[] allGameObjects = Resources.FindObjectsOfTypeAll<GameObject>();
+
+                // Filter the array to find objects with the target name
+                GameObject[] foundObjects = allGameObjects.Where(obj => obj.name == "CircularDamage(Clone)").ToArray();
+
+                foreach (GameObject obj in foundObjects)
+                {
+                    obj.AddComponent<DestroyOnDisable>();
+                }
+
                 } else if (JiMonster.currentMonsterState == BossGeneralStates[1])
                 {
                     HurtInterrupt.enabled = true;
@@ -308,8 +354,10 @@ public class EnlightenedJi : BaseUnityPlugin {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         if (!JiMonster) return;
 
-        if (GetIndices([10, 16]).Contains(JiMonster.currentMonsterState) || 
-        JiMonster.currentMonsterState == Engaging || JiMonster.currentMonsterState == BossGeneralStates[Hurt] ||
+        JiStunState.enabled = JiMonster.currentMonsterState == BossGeneralStates[6];
+
+        if (GetIndices([10, 16]).Contains(JiMonster.currentMonsterState) || // JiMonster.currentMonsterState == Engaging 
+        JiMonster.currentMonsterState == BossGeneralStates[Hurt] ||
         JiMonster.currentMonsterState == BossGeneralStates[BigHurt] || JiMonster.currentMonsterState == JiStunState) 
         {
             animationSpeed = JiAnimatorSpeed.Value + 3;
