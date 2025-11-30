@@ -32,13 +32,13 @@ public class EnlightenedJi : BaseUnityPlugin {
     private static ConfigEntry<bool> JiModifiedHP = null!;
     private static ConfigEntry<float> JiPhase2HPRatio = null!;
 
-    public static ConfigEntry<Vector3> blackReplace = null!;
-    public static ConfigEntry<Vector3> furReplace = null!;
-    public static ConfigEntry<Vector3> eyeReplace = null!;
-    public static ConfigEntry<Vector3> greenReplace = null!;
-    public static ConfigEntry<Vector3> capeReplace = null!;
-    public static ConfigEntry<Vector3> robeReplace = null!;
-    public static ConfigEntry<Vector3> tanReplace = null!;
+    public static ConfigEntry<string> blackReplace = null!;
+    public static ConfigEntry<string> furReplace = null!;
+    public static ConfigEntry<string> eyeReplace = null!;
+    public static ConfigEntry<string> greenReplace = null!;
+    public static ConfigEntry<string> capeReplace = null!;
+    public static ConfigEntry<string> robeReplace = null!;
+    public static ConfigEntry<string> tanReplace = null!;
 
     // private static SpriteRenderer jiSprite = null!;
     private static Material mat = null!;
@@ -237,12 +237,6 @@ public class EnlightenedJi : BaseUnityPlugin {
       "WHY DOESN'T THAT VIRUS AIL ME LIKE ALL OTHERS? I'M BUILT DIFFERENT!"
     ];
 
-    private static Func<string, Vector3> parseVec3 =
-        s => {
-            var p = s.Split(',');
-            return new Vector3(float.Parse(p[0]), float.Parse(p[1]), float.Parse(p[2]));
-        };
-
 
     private void Awake() {
         Log.Init(Logger);
@@ -260,47 +254,28 @@ public class EnlightenedJi : BaseUnityPlugin {
         mat = bundle.LoadAsset<Material>("RBFMat");
         ColorChange.InitializeMat(mat);
 
-        JiModifiedHP = Config.Bind("General (Retry boss to make any change have effect)", "JiModifiedHP", true, "Modifies Ji's HP");
-        JiModifiedAttackSequences = Config.Bind("General (Retry boss to make any change have effect)", "JiModifiedAttackSequences", true, "Modifies Ji's attack sequences");
-        JiModifiedSpeed = Config.Bind("General (Retry boss to make any change have effect)", "JiModifiedSpeed", true, "Modifies Ji's move speed depending on current attack");
-        JiModifiedSprite = Config.Bind("General (Retry boss to make any change have effect)", "JiModifiedSprite", true, "Modifies the color of Ji's sprite");
-        
-        JiAnimatorSpeed = Config.Bind("Speed (Must set JiModifiedSpeed to true to take effect)", "JiBaseSpeed", 1.2f, "The base speed at which Ji's attacks occur");
+        string general = "General (Retry boss to make any change have effect)";
+        string speed = "Speed (Must set JiModifiedSpeed to true to take effect)";
+        string hp = "HP (Must set JiModifiedHP to true to take effect)";
+        string color = "Color (Must set JiModifiedSprite to true to take effect)"
 
-        JiHPScale = Config.Bind("HP (Must set JiModifiedHP to true to take effect)", "JiHPScale", 6500f, "The amount of Ji's HP in Phase 1");
-        JiPhase2HPRatio = Config.Bind("HP (Must set JiModifiedHP to true to take effect)", "JiPhase2HPRatio", 1.65f, "The ratio used to determine phase 2 health (Phase 1 health * ratio)");
+        JiModifiedHP = Config.Bind(general, "JiModifiedHP", true, "Modifies Ji's HP");
+        JiModifiedAttackSequences = Config.Bind(general, "JiModifiedAttackSequences", true, "Modifies Ji's attack sequences");
+        JiModifiedSpeed = Config.Bind(general, "JiModifiedSpeed", true, "Modifies Ji's move speed depending on current attack");
+        JiModifiedSprite = Config.Bind(general, "JiModifiedSprite", true, "Modifies the color of Ji's sprite");
+        
+        JiAnimatorSpeed = Config.Bind(speed, "JiBaseSpeed", 1.2f, "The base speed at which Ji's attacks occur");
+
+        JiHPScale = Config.Bind(hp, "JiHPScale", 6500f, "The amount of Ji's HP in Phase 1");
+        JiPhase2HPRatio = Config.Bind(hp, "JiPhase2HPRatio", 1.65f, "The ratio used to determine phase 2 health (Phase 1 health * ratio)");
         
 
-        // blackReplace = Config.Bind("Color", "BlackReplace", "1,1,1", 
-        //     new ConfigDescription("Replaces black with specified RGB value on Ji's sprite (Only works if JiModifiedSprite is true)", null, 
-        //         new ConfigurationManagerAttributes {StrToObj = parseVec3}
-        //     )
-        // );
-        // furReplace = Config.Bind("Color", "FurReplace", "247,248,241", 
-        //     new ConfigDescription("Replaces fur color with specified RGB value on Ji's sprite (Only works if JiModifiedSprite is true)", null, 
-        //         new ConfigurationManagerAttributes {StrToObj = parseVec3}
-        //     )
-        // );
-        // eyeReplace = Config.Bind("Color", "eyeReplace", "186,240,227", 
-        //     new ConfigDescription("Replaces the hat eye color with specified RGB value on Ji's sprite (Only works if JiModifiedSprite is true)", null, 
-        //         new ConfigurationManagerAttributes {StrToObj = parseVec3}
-        //     )
-        // );
-        // greenReplace = Config.Bind("Color", "greenReplace", "79,193,129", 
-        //     new ConfigDescription("Replaces the claw and headband color with specified RGB value on Ji's sprite (Only works if JiModifiedSprite is true)", null, 
-        //         new ConfigurationManagerAttributes {StrToObj = parseVec3}
-        //     )
-        // );
-        // robeReplace = Config.Bind("Color", "capeReplace", "37,44,31", 
-        //     new ConfigDescription("Replaces the cape color with specified RGB value on Ji's sprite (Only works if JiModifiedSprite is true)", null, 
-        //         new ConfigurationManagerAttributes {StrToObj = parseVec3}
-        //     )
-        // );
-        // tanReplace = Config.Bind("Color", "tanHighlightReplace", "201,207,203", 
-        //     new ConfigDescription("Replaces the secondary robe color with specified RGB value on Ji's sprite (Only works if JiModifiedSprite is true)", null, 
-        //         new ConfigurationManagerAttributes {StrToObj = parseVec3}
-        //     )
-        // );
+        blackReplace = Config.Bind(color, "BlackReplace", "1,1,1", "Replaces black with specified RGB value on Ji's sprite");
+        furReplace = Config.Bind(color, "FurReplace", "247,248,241", "Replaces fur color with specified RGB value on Ji's sprite ");
+        eyeReplace = Config.Bind(color, "eyeReplace", "186,240,227", "Replaces the hat eye color with specified RGB value on Ji's sprite");
+        greenReplace = Config.Bind(color, "greenReplace", "79,193,129", "Replaces the claw and headband color with specified RGB value on Ji's sprite");
+        robeReplace = Config.Bind(color, "capeReplace", "37,44,31", "Replaces the cape color with specified RGB value on Ji's sprite");
+        tanReplace = Config.Bind(color, "tanHighlightReplace", "201,207,203", "Replaces the secondary robe color with specified RGB value on Ji's sprite");
 
     }
 
@@ -330,7 +305,9 @@ public class EnlightenedJi : BaseUnityPlugin {
                 AlterAttacks();
 
             }
-            StartCoroutine(JiHPChange());
+            if (JiModifiedHP.Value) {
+                StartCoroutine(JiHPChange());
+            }
         }
     }
 
@@ -478,7 +455,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         // baseHealthRef(JiMonster.monsterStat) = JiHPScale.Value / 1.35f;
         // JiMonster.postureSystem.CurrentHealthValue = JiHPScale.Value;
         Logger.LogInfo($"Ji Phase 1 HP at {JiMonster.postureSystem.CurrentHealthValue}");
-        JiMonster.monsterStat.Phase2HealthRatio = 1.65f;
+        JiMonster.monsterStat.Phase2HealthRatio = JiPhase2HPRatio.Value;
 
     }
 
