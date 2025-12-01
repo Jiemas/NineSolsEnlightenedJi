@@ -17,6 +17,21 @@ using System.Reflection;
 
 namespace EnlightenedJi;
 
+// public class SimpleCoroutine : BaseUnityPlugin {
+//     public void Start() {
+//         StartCoroutine(delayTitleChange());
+//     }
+
+//     private IEnumerator delayTitleChange()
+//     {
+//         yield return new WaitForSeconds(1f);
+//         RubyTextMeshProUGUI BossName = GameObject.Find(
+//             "GameCore(Clone)/RCG LifeCycle/UIManager/GameplayUICamera/MonsterHPRoot/BossHPRoot/UIBossHP(Clone)/Offset(DontKeyAnimationOnThisNode)/AnimationOffset/BossName")
+//             .GetComponent<RubyTextMeshProUGUI>();
+//         BossName.text = "The Kunlun Immortal";
+//     }
+// }
+
 // [BepInDependency(NineSolsAPICore.PluginGUID)]
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 public class EnlightenedJi : BaseUnityPlugin {
@@ -165,7 +180,7 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private static Dictionary<string, Func<string, float>> SpeedDict2 = new Dictionary<string, Func<string, float>>
     {
-        {"[1]Divination Free Zone (BossGeneralState)",                  _ => 0f},
+        {"[1]Divination Free Zone (BossGeneralState)",                  _ => randomAdd(3, 0.2f)},
         {"[2][Short]Flying Projectiles (BossGeneralState)",             lastMove => afterFinisherCheck(lastMove) ? 0.65f : randomAdd(2, 0.3f)},
         {"[3][Finisher]BlackHoleAttack (BossGeneralState)",             _ => 2f},
         {"[4][Altar]Set Laser Altar Environment (BossGeneralState)",    _ => 1.65f},
@@ -258,7 +273,8 @@ public class EnlightenedJi : BaseUnityPlugin {
         furReplace = Config.Bind(color, "FurReplace", "247,248,241", "Replaces fur color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
         eyeReplace = Config.Bind(color, "eyeReplace", "186,240,227", "Replaces the hat eye color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
         greenReplace = Config.Bind(color, "greenReplace", "79,193,129", "Replaces the claw and headband color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
-        robeReplace = Config.Bind(color, "capeReplace", "37,44,31", "Replaces the cape color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        capeReplace = Config.Bind(color, "capeReplace", "37,44,31", "Replaces the cape color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        robeReplace = Config.Bind(color, "robeReplace", "128,128,128", "Replaces the robe color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");        
         tanReplace = Config.Bind(color, "tanHighlightReplace", "201,207,203", "Replaces the secondary robe color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
         reloadMaterialKeyboardShortcut = Config.Bind(color,
             "materialReloadShortcut", new KeyboardShortcut(KeyCode.H, KeyCode.LeftControl),
@@ -310,7 +326,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     private void ReloadMaterial()
     {
         ColorChange.InitializeColorPairs([blackReplace.Value, furReplace.Value, eyeReplace.Value, 
-            greenReplace.Value, robeReplace.Value, tanReplace.Value]);
+            greenReplace.Value, capeReplace.Value, robeReplace.Value, tanReplace.Value]);
         ColorChange.InitializeMat(mat);
         Logger.LogInfo("Reloaded material!");
     }
@@ -350,17 +366,21 @@ public class EnlightenedJi : BaseUnityPlugin {
     private IEnumerator delayTitleChange()
     {
         yield return new WaitForSeconds(1f);
+        // Logger.LogInfo("delayTitleChange called!");
+
         RubyTextMeshProUGUI BossName = GameObject.Find(
             "GameCore(Clone)/RCG LifeCycle/UIManager/GameplayUICamera/MonsterHPRoot/BossHPRoot/UIBossHP(Clone)/Offset(DontKeyAnimationOnThisNode)/AnimationOffset/BossName")
             .GetComponent<RubyTextMeshProUGUI>();
         BossName.text = "The Kunlun Immortal";
+        // Logger.LogInfo("modified name called!");
+
     }
 
     private static bool foo = true;
 
     private static Action ActionSpriteUpdate = () => ColorChange.updateJiSprite();
 
-    private static Action ActionUpdate = () =>
+    private void ActionUpdate ()
     {
         JiSpeedChange();
         // if (JiModifiedSpeed.Value) {
@@ -392,14 +412,14 @@ public class EnlightenedJi : BaseUnityPlugin {
         // _2dxFX_ColorChange laserCircleHueValue = laserCircle.GetComponent<_2dxFX_ColorChange>();
         // laserCircleHueValue._HueShift = 130;
             // Logger.LogInfo(jiSprite.material);
-    };
+    }
 
 
     public void Update() {
         JiUpdate();
     }
 
-    private static void HandleStateChange() 
+    private void HandleStateChange() 
     {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         if (JiMonster is not null) 
@@ -434,6 +454,7 @@ public class EnlightenedJi : BaseUnityPlugin {
                 {
                     CurrSpeedDict = SpeedDict2;
                     HandlePhaseTransitionText();
+                    StartCoroutine(delayTitleChange());
                 } else if (JiMonster.currentMonsterState == BossGeneralStates[1])
                 {
                     HurtInterrupt.enabled = true;
