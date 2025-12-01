@@ -5,8 +5,8 @@ using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
-// using NineSolsAPI;
-// using NineSolsAPI.Utils;
+using NineSolsAPI;
+using NineSolsAPI.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -39,7 +39,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     public static ConfigEntry<string> capeReplace = null!;
     public static ConfigEntry<string> robeReplace = null!;
     public static ConfigEntry<string> tanReplace = null!;
-
+    private ConfigEntry<KeyboardShortcut> reloadMaterialKeyboardShortcut = null!;
     // private static SpriteRenderer jiSprite = null!;
     private static Material mat = null!;
     private static AssetBundle bundle = null!;
@@ -111,13 +111,9 @@ public class EnlightenedJi : BaseUnityPlugin {
     // private static int QuickAttack = 3, EasyFinisher = 5, LongerOrBlizzard = 10, SwordOrLaser = 11, SwordOrAltar = 12, HardAltarOrEasyFinisher = 16,
 
     // Miscellaneous Variables
-    private static bool HPUpdated = false;
-    private static bool phase2 = false;
-
     private static string temp = "";
 
     private static int randomNum = 0;
-    private static int phasesFromBlackHole = 0;
     private static float animationSpeed = 1;
     private static bool firstMessage = true;
 
@@ -135,6 +131,10 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private static MonsterHurtInterrupt HurtInterrupt = null!;
 
+    private static Action JiUpdate = null!;
+    private static Action JiSpeedChange = null!;
+    private static Action JiSpriteUpdate = null!;
+    private static Action Pass = () => {};
 
     private static Func<int, float, float> randomAdd = (probability, incr) => randomNum % probability == 0 ? incr : 0f;
 
@@ -158,7 +158,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         {"[13][Finisher]QuickTeleportSword 危戳 (BossGeneralState)",    lastMove => afterFinisherCheck(lastMove) ? 0.5f : randomAdd(3, 0.2f)},
         {"[14][Altar]Laser Altar Circle (BossGeneralState)",           lastMove => afterFinisherCheck(lastMove) ? 2f : randomAdd(3, 0.2f)},
         {"[15][Altar]Health Altar (BossGeneralState)",                 _ => 1f},
-        {"[16]Divination JumpKicked (BossGeneralState)",                                  _ => 3f},
+        {"[16]Divination JumpKicked (BossGeneralState)",               _ => 3f},
         {"PostureBreak (PostureBreakState)",                           _ => 3f},
         {"1_Engaging (StealthEngaging)",                               _ => 3f}
     };
@@ -179,7 +179,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         {"[13][Finisher]QuickTeleportSword 危戳 (BossGeneralState)",    _ => Math.Max(randomAdd(3, 0.35f), randomAdd(2, 0.3f))},
         {"[14][Altar]Laser Altar Circle (BossGeneralState)",           lastMove => afterFinisherCheck(lastMove) ? 2f : randomAdd(2, 0.3f)},
         {"[15][Altar]Health Altar (BossGeneralState)",                 _ => 1f},
-        {"[16]Divination JumpKicked (BossGeneralState)",                                  _ => 3f},
+        {"[16]Divination JumpKicked (BossGeneralState)",               _ => 3f},
         {"PostureBreak (PostureBreakState)",                           _ => 3f},
         {"1_Engaging (StealthEngaging)",                               _ => 3f}
     };
@@ -237,6 +237,35 @@ public class EnlightenedJi : BaseUnityPlugin {
       "WHY DOESN'T THAT VIRUS AIL ME LIKE ALL OTHERS? I'M BUILT DIFFERENT!"
     ];
 
+    private void InitConfig() 
+    {
+        string general = "General (Retry boss to make any change have effect)";
+        string speed = "Speed (Must set JiModifiedSpeed to true to take effect)";
+        string hp = "HP (Must set JiModifiedHP to true to take effect)";
+        string color = "Color (Must set JiModifiedSprite to true to take effect)";
+
+        JiModifiedHP = Config.Bind(general, "JiModifiedHP", true, "Modifies Ji's HP");
+        JiModifiedAttackSequences = Config.Bind(general, "JiModifiedAttackSequences", true, "Modifies Ji's attack sequences");
+        JiModifiedSpeed = Config.Bind(general, "JiModifiedSpeed", true, "Modifies Ji's move speed depending on current attack");
+        JiModifiedSprite = Config.Bind(general, "JiModifiedSprite", true, "Modifies the color of Ji's sprite");
+        
+        JiAnimatorSpeed = Config.Bind(speed, "JiBaseSpeed", 1.2f, "The base speed at which Ji's attacks occur");
+
+        JiHPScale = Config.Bind(hp, "JiHPScale", 6500f, "The amount of Ji's HP in Phase 1");
+        JiPhase2HPRatio = Config.Bind(hp, "JiPhase2HPRatio", 1.65f, "The ratio used to determine phase 2 health (Phase 1 health * ratio)");
+
+        blackReplace = Config.Bind(color, "BlackReplace", "1,1,1", "Replaces black with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        furReplace = Config.Bind(color, "FurReplace", "247,248,241", "Replaces fur color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        eyeReplace = Config.Bind(color, "eyeReplace", "186,240,227", "Replaces the hat eye color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        greenReplace = Config.Bind(color, "greenReplace", "79,193,129", "Replaces the claw and headband color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        robeReplace = Config.Bind(color, "capeReplace", "37,44,31", "Replaces the cape color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        tanReplace = Config.Bind(color, "tanHighlightReplace", "201,207,203", "Replaces the secondary robe color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        reloadMaterialKeyboardShortcut = Config.Bind(color,
+            "materialReloadShortcut", new KeyboardShortcut(KeyCode.H, KeyCode.LeftControl),
+            "Press after modifying color replacements to reload material and shaders with new colors");
+        KeybindManager.Add(this, ReloadMaterial, () => reloadMaterialKeyboardShortcut.Value);
+    }
+
 
     private void Awake() {
         Log.Init(Logger);
@@ -248,35 +277,21 @@ public class EnlightenedJi : BaseUnityPlugin {
         Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
         SceneManager.sceneLoaded += OnSceneLoaded;
 
+        InitConfig();
+
+        JiUpdate = Pass;
+        JiSpeedChange = Pass;
+        JiSpriteUpdate = Pass;
+
         string bundlePath = Path.Combine(Application.persistentDataPath, "mymodbundle");
-        
         bundle = AssetBundle.LoadFromFile(bundlePath);
-        mat = bundle.LoadAsset<Material>("RBFMat");
-        ColorChange.InitializeMat(mat);
-
-        string general = "General (Retry boss to make any change have effect)";
-        string speed = "Speed (Must set JiModifiedSpeed to true to take effect)";
-        string hp = "HP (Must set JiModifiedHP to true to take effect)";
-        string color = "Color (Must set JiModifiedSprite to true to take effect)"
-
-        JiModifiedHP = Config.Bind(general, "JiModifiedHP", true, "Modifies Ji's HP");
-        JiModifiedAttackSequences = Config.Bind(general, "JiModifiedAttackSequences", true, "Modifies Ji's attack sequences");
-        JiModifiedSpeed = Config.Bind(general, "JiModifiedSpeed", true, "Modifies Ji's move speed depending on current attack");
-        JiModifiedSprite = Config.Bind(general, "JiModifiedSprite", true, "Modifies the color of Ji's sprite");
-        
-        JiAnimatorSpeed = Config.Bind(speed, "JiBaseSpeed", 1.2f, "The base speed at which Ji's attacks occur");
-
-        JiHPScale = Config.Bind(hp, "JiHPScale", 6500f, "The amount of Ji's HP in Phase 1");
-        JiPhase2HPRatio = Config.Bind(hp, "JiPhase2HPRatio", 1.65f, "The ratio used to determine phase 2 health (Phase 1 health * ratio)");
-        
-
-        blackReplace = Config.Bind(color, "BlackReplace", "1,1,1", "Replaces black with specified RGB value on Ji's sprite");
-        furReplace = Config.Bind(color, "FurReplace", "247,248,241", "Replaces fur color with specified RGB value on Ji's sprite ");
-        eyeReplace = Config.Bind(color, "eyeReplace", "186,240,227", "Replaces the hat eye color with specified RGB value on Ji's sprite");
-        greenReplace = Config.Bind(color, "greenReplace", "79,193,129", "Replaces the claw and headband color with specified RGB value on Ji's sprite");
-        robeReplace = Config.Bind(color, "capeReplace", "37,44,31", "Replaces the cape color with specified RGB value on Ji's sprite");
-        tanReplace = Config.Bind(color, "tanHighlightReplace", "201,207,203", "Replaces the secondary robe color with specified RGB value on Ji's sprite");
-
+        if (bundle is not null) {
+            mat = bundle.LoadAsset<Material>("RBFMat");
+            if (mat is not null) 
+            {
+                ReloadMaterial();
+            }
+        }
     }
 
     // private IEnumerator AddToCompToCircularDamage(circleObj)
@@ -292,22 +307,43 @@ public class EnlightenedJi : BaseUnityPlugin {
     //     CircularDamage.AddComponent<DestroyOnDisable>();
     // }
 
+    private void ReloadMaterial()
+    {
+        ColorChange.InitializeColorPairs([blackReplace.Value, furReplace.Value, eyeReplace.Value, 
+            greenReplace.Value, robeReplace.Value, tanReplace.Value]);
+        ColorChange.InitializeMat(mat);
+        Logger.LogInfo("Reloaded material!");
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (scene.name == "A10_S5_Boss_Jee")
         {
-            phase2 = false;
 
-            ColorChange.getJiSprite();
-            CurrSpeedDict = SpeedDict1;
+            if (JiModifiedSprite.Value) {
+                ColorChange.getJiSprite();
+                JiSpriteUpdate = ActionSpriteUpdate;
+            }
+            // ColorChange.getJiSprite();
+
+            if (JiModifiedSpeed.Value) {
+                CurrSpeedDict = SpeedDict1;
+                JiSpeedChange = ActionSpeedChange;
+            }
+
             GetAttackGameObjects();
             if (JiModifiedAttackSequences.Value) {
                 AlterAttacks();
+            }
 
-            }
+            JiUpdate = ActionUpdate;
+
             if (JiModifiedHP.Value) {
-                StartCoroutine(JiHPChange());
+                StartCoroutine(JiHPChange(JiHPScale.Value, JiPhase2HPRatio.Value));
+            } else {
+                StartCoroutine(JiHPChange(5049f, 2f)); // TODO VERIFY REAL VALUE
             }
+
         }
     }
 
@@ -322,24 +358,26 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private static bool foo = true;
 
-    public void Update() {
+    private static Action ActionSpriteUpdate = () => ColorChange.updateJiSprite();
+
+    private static Action ActionUpdate = () =>
+    {
+        JiSpeedChange();
+        // if (JiModifiedSpeed.Value) {
+        //     JiSpeedChange();
+        // }
+        HandleStateChange();
+        JiSpriteUpdate();
+        // if (JiModifiedSprite.Value) {
+        //     ColorChange.updateJiSprite();
+        // }
         
-        if (SceneManager.GetActiveScene().name == "A10_S5_Boss_Jee") {
-            if (JiModifiedSpeed.Value) {
-                JiSpeedChange();
-            }
-            // JiSpeedChange();
-            HandleStateChange();
-            if (JiModifiedSprite.Value) {
-                ColorChange.updateJiSprite();
-            }
-            
-            // This is very performance heavy, need to find a better alternative
-            var greenEffect = GameObject.Find("A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Jee/MultiSpriteEffect_Prefab 識破提示Variant(Clone)");
-            if (greenEffect is not null)
-            {
-                greenEffect.SetActive(false);
-            }
+        // This is very performance heavy, need to find a better alternative
+        var greenEffect = GameObject.Find("A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Jee/MultiSpriteEffect_Prefab 識破提示Variant(Clone)");
+        if (greenEffect is not null)
+        {
+            greenEffect.SetActive(false);
+        }
 
         // var laserCircle = GameObject.Find("CircularDamage(Clone)/Animator/Effect_BEAM/P_ScretTreePowerCIRCLE");
         // ToastManager.Toast(laserCircle);
@@ -354,25 +392,28 @@ public class EnlightenedJi : BaseUnityPlugin {
         // _2dxFX_ColorChange laserCircleHueValue = laserCircle.GetComponent<_2dxFX_ColorChange>();
         // laserCircleHueValue._HueShift = 130;
             // Logger.LogInfo(jiSprite.material);
-        } 
+    };
+
+
+    public void Update() {
+        JiUpdate();
     }
 
-    private void HandleStateChange() 
+    private static void HandleStateChange() 
     {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         if (JiMonster is not null) 
         {
             if (temp != JiMonster.currentMonsterState.ToString())
             {
-                temp = JiMonster.currentMonsterState.ToString();
-
-                if (temp != "1_Engaging (StealthEngaging)") {
+                if (JiMonster.currentMonsterState.ToString() != "1_Engaging (StealthEngaging)") {
+                    temp = JiMonster.currentMonsterState.ToString();
                     randomNum = random.Next();
                 }
 
-                Logger.LogInfo($"'{temp}'");
-                Logger.LogInfo(GetCurrentSequence());
-                Logger.LogInfo("");
+                // Logger.LogInfo($"'{temp}'");
+                // Logger.LogInfo(GetCurrentSequence());
+                // Logger.LogInfo("");
 
                 // StopAllCoroutines();
                 // StartCoroutine(AddToCompToCircularDamage());
@@ -391,7 +432,6 @@ public class EnlightenedJi : BaseUnityPlugin {
 
                 if (JiMonster.currentMonsterState == PhaseChangeState)
                 {
-                    phase2 = true;
                     CurrSpeedDict = SpeedDict2;
                     HandlePhaseTransitionText();
                 } else if (JiMonster.currentMonsterState == BossGeneralStates[1])
@@ -400,20 +440,18 @@ public class EnlightenedJi : BaseUnityPlugin {
                 } else {
                     HurtInterrupt.enabled = false;
                 }
-                phasesFromBlackHole = JiMonster.currentMonsterState == BossGeneralStates[10] ? 0 : (phasesFromBlackHole + 1);
-                // ColorChange.updateJiSprite();
             }
         }
     }
 
-    private void HandlePhaseTransitionText()
+    private static void HandlePhaseTransitionText()
     {
         if (firstMessage)
         {
             firstMessage = false;
             return;
         }
-        PhaseTransitionText.text = randomNum % 4 == 0 ? meme_quotes[random.Next() % (meme_quotes.Length)] : lore_quotes[random.Next() % (lore_quotes.Length)];
+        PhaseTransitionText.text = randomNum % 4 == 0 ? meme_quotes[random.Next() % meme_quotes.Length] : lore_quotes[random.Next() % lore_quotes.Length];
     }
 
     private List<BossGeneralState> GetIndices(int[] indices)
@@ -426,7 +464,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         return pickedStates;
     }
 
-    private void JiSpeedChange() {
+    private static Action ActionSpeedChange = () => {
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         if (!JiMonster) return;
 
@@ -438,28 +476,26 @@ public class EnlightenedJi : BaseUnityPlugin {
             JiMonster.monsterCore.AnimationSpeed = JiAnimatorSpeed.Value;
         }
         JiStunState.enabled = JiMonster.currentMonsterState == BossGeneralStates[6];
-    }
+    };
 
-    private IEnumerator JiHPChange() {
+    private IEnumerator JiHPChange(float newHp, float phase2Ratio) {
         while (!MonsterManager.Instance.ClosetMonster)
         {
             yield return null;
         }
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         var baseHealthRef = AccessTools.FieldRefAccess<MonsterStat, float>("BaseHealthValue");
-        if (JiMonster.postureSystem.CurrentHealthValue != JiHPScale.Value)
+        if (JiMonster.postureSystem.CurrentHealthValue != newHp)
         {
-            baseHealthRef(JiMonster.monsterStat) = JiHPScale.Value / 1.35f;
-            JiMonster.postureSystem.CurrentHealthValue = JiHPScale.Value;
+            baseHealthRef(JiMonster.monsterStat) = newHp / 1.35f;
+            JiMonster.postureSystem.CurrentHealthValue = newHp;
         }
-        // baseHealthRef(JiMonster.monsterStat) = JiHPScale.Value / 1.35f;
-        // JiMonster.postureSystem.CurrentHealthValue = JiHPScale.Value;
         Logger.LogInfo($"Ji Phase 1 HP at {JiMonster.postureSystem.CurrentHealthValue}");
-        JiMonster.monsterStat.Phase2HealthRatio = JiPhase2HPRatio.Value;
+        JiMonster.monsterStat.Phase2HealthRatio = phase2Ratio;
 
     }
 
-    private MonsterStateGroupSequence GetCurrentSequence(){
+    private static MonsterStateGroupSequence GetCurrentSequence(){
         Type type = attackSequenceModule.GetType();
         FieldInfo fieldInfo = type.GetField("sequence", BindingFlags.Instance | BindingFlags.NonPublic);
         MonsterStateGroupSequence sequenceValue = (MonsterStateGroupSequence)fieldInfo.GetValue(attackSequenceModule);
@@ -618,7 +654,6 @@ public class EnlightenedJi : BaseUnityPlugin {
         if (Sequences1[Default].AttackSequence.Contains(Groups[SneakAttack])) {
             return;
         }
-        phase2 = false;
 
         // Custom Attack Groups
         int i = ExistingGroupPairs.Length + 2;
@@ -687,9 +722,6 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private void OnDestroy()
     {
-        // Make sure to clean up resources here to support hot reloading
-        HPUpdated = false;
-        phase2 = false;
         firstMessage = true;
         SceneManager.sceneLoaded -= OnSceneLoaded;
         bundle.Unload(false);

@@ -79,7 +79,7 @@ private static (float x, float y, float z)[] stayColors = [];
             return new (float.Parse(p[0]), float.Parse(p[1]), float.Parse(p[2]));
         };
 
-    static private void initializeColorPairs(string[] configStrings)
+    static public void InitializeColorPairs(string[] configStrings)
     {
         for (int i = 0; i < originalColors.Length; i++) 
         {
