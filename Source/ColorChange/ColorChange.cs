@@ -31,7 +31,8 @@ public class ColorChange {
       (79f, 193f, 129f), // Green Claws/Headband
       (104f, 24f, 23f),  // Cape Red 
       (228f, 190f, 106f), // Robe Yellow
-      (212f, 203f, 167f) // Tan Robe Highlight
+      (212f, 203f, 167f), // Tan Robe Highlight
+      (223f, 86f, 96f) // Crimson/Tai Danger Red
     ];
 
     private static ((float x, float y, float z) src, (float x, float y, float z) dst)[] colorPairs = new ((float x, float y, float z) src, (float x, float y, float z) dst)[originalColors.Length];

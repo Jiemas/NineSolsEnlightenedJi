@@ -39,6 +39,8 @@ public class EnlightenedJi : BaseUnityPlugin {
     public static ConfigEntry<string> capeReplace = null!;
     public static ConfigEntry<string> robeReplace = null!;
     public static ConfigEntry<string> tanReplace = null!;
+    public static ConfigEntry<string> crimsonReplace = null!;
+
     private ConfigEntry<KeyboardShortcut> reloadMaterialKeyboardShortcut = null!;
     // private static SpriteRenderer jiSprite = null!;
     private static Material mat = null!;
@@ -260,6 +262,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         capeReplace = Config.Bind(color, "capeReplace", "37,44,31", "Replaces the cape color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
         robeReplace = Config.Bind(color, "robeReplace", "128,128,128", "Replaces the robe color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");        
         tanReplace = Config.Bind(color, "tanHighlightReplace", "201,207,203", "Replaces the secondary robe color with specified RGB value on Ji's sprite (Must use \"##,##,##\" format)");
+        crimsonReplace = Config.Bind(color, "crimsonReplace", "255,215,0", "Replaces the crimson attack color with specified RGB value (Must use \"##,##,##\" format)");
         reloadMaterialKeyboardShortcut = Config.Bind(color,
             "*materialReloadShortcut", new KeyboardShortcut(KeyCode.H, KeyCode.LeftControl),
             "Press after modifying color replacements to reload material and shaders with new colors");
@@ -334,7 +337,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     private void ReloadMaterial()
     {
         ColorChange.InitializeColorPairs([blackReplace.Value, furReplace.Value, eyeReplace.Value, 
-            greenReplace.Value, capeReplace.Value, robeReplace.Value, tanReplace.Value]);
+            greenReplace.Value, capeReplace.Value, robeReplace.Value, tanReplace.Value, crimsonReplace.Value]);
         ColorChange.InitializeMat(mat);
         Logger.LogInfo("Reloaded material!");
         StartCoroutine(ModifyMultiSprite());
