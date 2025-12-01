@@ -14,7 +14,7 @@ namespace EnlightenedJi;
 // A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/Weapon/JeeStaffTip/Effect_BEAM/STPBALL/Light/
 
 // Might be the red laser circles
-// CircularDamage(Clone)/Animator/Effect_BEAM/P_ScretTreePowerCIRCLE/
+// CircularDamage(Clone)/Animator/Effect_BEAM/P_ScretTreePowerCIRCLEGlow/
 
 // Red stars are called Tai danger
 
@@ -23,35 +23,22 @@ public class ColorChange {
     public static Material material = null!;
     private static int stayRange = 1;
 
-private static (float x, float y, float z)[] stayColors = [];
-
     private static (float x, float y, float z)[] originalColors = 
     [
-      (1f, 1f, 1f),
-      (247f, 248f, 241f),
-      (186f, 240f, 227f),
-      (79f, 193f, 129f),
-      (104f, 24f, 23f),
-      (228f, 190f, 106f),
-      (212f, 203f, 167f)
+      (1f, 1f, 1f),  // Black
+      (247f, 248f, 241f), // Fur White 
+      (186f, 240f, 227f),   // Eye Baby Blue
+      (79f, 193f, 129f), // Green Claws/Headband
+      (104f, 24f, 23f),  // Cape Red 
+      (228f, 190f, 106f), // Robe Yellow
+      (212f, 203f, 167f) // Tan Robe Highlight
     ];
 
     private static ((float x, float y, float z) src, (float x, float y, float z) dst)[] colorPairs = new ((float x, float y, float z) src, (float x, float y, float z) dst)[originalColors.Length];
-    // [
-    //     ((1f, 1f, 1f), (1f, 1f, 1f)),  // Black
-    //     ((247f, 248f, 241f), (247f, 248f, 241f)), // Fur White 
-    //     ((186f, 240f, 227f), (186f, 240f, 227f)), // Eye Baby Blue
-    //     ((79f, 193f, 129f), (79f, 193f, 129f)), // Green Claws/Headband
-    //     ((104f, 24f, 23f), (37f, 44f, 31f)), // Cape Red -> Grey Black
-    //     ((228f, 190f, 106f), (128f, 128f, 128f)), // Robe Yellow -> Gray
-    //     ((212f, 203f, 167f), (201f, 207f, 203f)) // Tan Robe Highlight -> Bone White
-    // ];
 
     private static Vector3[] srcColors = new Vector3[colorPairs.Length * 27];
 
-
     private static Vector3[] dstColors = new Vector3[colorPairs.Length * 27];
-
 
     private static string spritePath = "A10S5/Room/Boss And Environment Binder/General Boss Fight FSM Object 姬 Variant/FSM Animator/LogicRoot/---Boss---/BossShowHealthArea/StealthGameMonster_Boss_Jee/MonsterCore/Animator(Proxy)/Animator/View/";
     private static string[] jiSpritePaths = 

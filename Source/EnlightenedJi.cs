@@ -307,25 +307,38 @@ public class EnlightenedJi : BaseUnityPlugin {
     //     CircularDamage.AddComponent<DestroyOnDisable>();
     // }
 
+    private IEnumerator ModifyMultiSprite() 
+    {
+        while (SceneManager.GetActiveScene().name != "A10_S5_Boss_Jee") {
+            yield return new WaitForSeconds(0.25f);
+        }
+        var all = Resources.FindObjectsOfTypeAll<GameObject>();
+        foreach (var go in all) {
+            if (go.name == "MultiSpriteEffect_Prefab 識破提示Variant(Clone)" || go.name == "MultiSpriteEffect_Prefab 識破提示Variant") {
+                // Logger.LogInfo("Found: " + go.name);
+                Transform sprite = go.transform.Find("View/Sprite");
+                // Logger.LogInfo("Got: " + sprite);
+                var spriteRenderer = sprite.GetComponent<SpriteRenderer>();
+                spriteRenderer.material = ColorChange.material;
+            } else if (go.name == "Effect_TaiDanger(Clone)" || go.name == "Effect_TaiDanger") {
+                Logger.LogInfo("Found: " + go.name);
+                Transform sprite = go.transform.Find("Sprite");
+                Logger.LogInfo("Got: " + sprite);
+                var spriteRenderer = sprite.GetComponent<SpriteRenderer>();
+                Logger.LogInfo("Got: " + spriteRenderer);
+                spriteRenderer.material = ColorChange.material;
+            }
+        }
+    }
+
     private void ReloadMaterial()
     {
         ColorChange.InitializeColorPairs([blackReplace.Value, furReplace.Value, eyeReplace.Value, 
             greenReplace.Value, capeReplace.Value, robeReplace.Value, tanReplace.Value]);
         ColorChange.InitializeMat(mat);
         Logger.LogInfo("Reloaded material!");
+        StartCoroutine(ModifyMultiSprite());
 
-        // "MultiSpriteEffect_Prefab 識破提示Variant"
-
-        var all = Resources.FindObjectsOfTypeAll<GameObject>();
-        foreach (var go in all) {
-            if (go.name == "MultiSpriteEffect_Prefab 識破提示Variant(Clone)" || go.name == "MultiSpriteEffect_Prefab 識破提示Variant") {
-                Logger.LogInfo("Found: " + go.name);
-                Transform sprite = go.transform.Find("View/Sprite");
-                Logger.LogInfo("Got: " + sprite);
-                var spriteRenderer = sprite.GetComponent<SpriteRenderer>();
-                spriteRenderer.material = ColorChange.material;
-            }
-        }
 }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
