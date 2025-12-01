@@ -175,7 +175,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         {"[15][Altar]Health Altar (BossGeneralState)",                 _ => 1f},
         {"[16]Divination JumpKicked (BossGeneralState)",               _ => 3f},
         {"PostureBreak (PostureBreakState)",                           _ => 3f},
-        {"1_Engaging (StealthEngaging)",                               _ => 3f}
+        {"1_Engaging (StealthEngaging)",                               _ => 0f}
     };
 
     private static Dictionary<string, Func<string, float>> SpeedDict2 = new Dictionary<string, Func<string, float>>
@@ -196,7 +196,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         {"[15][Altar]Health Altar (BossGeneralState)",                 _ => 1f},
         {"[16]Divination JumpKicked (BossGeneralState)",               _ => 3f},
         {"PostureBreak (PostureBreakState)",                           _ => 3f},
-        {"1_Engaging (StealthEngaging)",                               _ => 3f}
+        {"1_Engaging (StealthEngaging)",                               _ => 0f}
     };
 
     private static string[] lore_quotes = [
@@ -340,7 +340,6 @@ public class EnlightenedJi : BaseUnityPlugin {
                 ColorChange.getJiSprite();
                 JiSpriteUpdate = ActionSpriteUpdate;
             }
-            // ColorChange.getJiSprite();
 
             if (JiModifiedSpeed.Value) {
                 CurrSpeedDict = SpeedDict1;
@@ -432,8 +431,9 @@ public class EnlightenedJi : BaseUnityPlugin {
                 }
 
                 // Logger.LogInfo($"'{temp}'");
-                // Logger.LogInfo(GetCurrentSequence());
-                // Logger.LogInfo("");
+                Logger.LogInfo(JiMonster.currentMonsterState.ToString());
+                Logger.LogInfo(GetCurrentSequence());
+                Logger.LogInfo("");
 
                 // StopAllCoroutines();
                 // StartCoroutine(AddToCompToCircularDamage());
@@ -473,16 +473,6 @@ public class EnlightenedJi : BaseUnityPlugin {
             return;
         }
         PhaseTransitionText.text = randomNum % 4 == 0 ? meme_quotes[random.Next() % meme_quotes.Length] : lore_quotes[random.Next() % lore_quotes.Length];
-    }
-
-    private List<BossGeneralState> GetIndices(int[] indices)
-    {
-        List<BossGeneralState> pickedStates = new List<BossGeneralState>();
-        foreach (int i in indices)
-        {
-            pickedStates.Add(BossGeneralStates[i]);
-        }
-        return pickedStates;
     }
 
     private static Action ActionSpeedChange = () => {
@@ -604,21 +594,6 @@ public class EnlightenedJi : BaseUnityPlugin {
         HurtInterrupt = GameObject.Find($"{jiBossPath}MonsterCore/Animator(Proxy)/Animator/LogicRoot/HurtInterrupt").GetComponent<MonsterHurtInterrupt>();
 
         // Logger.LogInfo("Got attack game objects");
-    }
-
-    private void OverwriteAttackGroupInSequence(MonsterStateGroupSequence sequence, int index, MonsterStateGroup newGroup)
-    {
-        sequence.AttackSequence[index] = newGroup;
-    }
-
-    private void InsertAttackGroupToSequence(MonsterStateGroupSequence sequence, int index, MonsterStateGroup newGroup)
-    {
-        sequence.AttackSequence.Insert(index, newGroup);
-    }
-
-    private void AddAttackGroupToSequence(MonsterStateGroupSequence sequence, MonsterStateGroup newGroup)
-    {
-        sequence.AttackSequence.Add(newGroup);
     }
 
     private Weight<MonsterState> CreateWeight(MonsterState state){
