@@ -44,6 +44,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     private ConfigEntry<KeyboardShortcut> reloadMaterialKeyboardShortcut = null!;
     // private static SpriteRenderer jiSprite = null!;
     private static Material mat = null!;
+    private static Material crimsonMat = null!;
     private static AssetBundle bundle = null!;
 
     // Path Variables
@@ -94,7 +95,7 @@ public class EnlightenedJi : BaseUnityPlugin {
     ];
     private static (int[] attacksList, string objectName)[] customGroupPatterns =
     [
-        ([10, 11, 12, 13, 14], "SneakAttack(Attack 10/11/12/13/14)"),
+        ([11, 12, 13, 14], "SneakAttack(Attack 11/12/13/14)"),
         ([5, 9], "BackAttack(Attack 5/9)"),
         ([5, 9, 7], "LongerOrBlizardAttack(Attack 5/9/7)"),
         ([11, 12, 14], "SwordOrLaserAttack(Attack 11/12/14)"),
@@ -161,7 +162,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         {"[15][Altar]Health Altar (BossGeneralState)",                 _ => 1f},
         {"[16]Divination JumpKicked (BossGeneralState)",               _ => 3f},
         {"PostureBreak (PostureBreakState)",                           _ => 3f},
-        {"1_Engaging (StealthEngaging)",                               _ => 0f}
+        {"1_Engaging (StealthEngaging)",                               _ => 3f}
     };
 
     private static Dictionary<string, Func<string, float>> SpeedDict2 = new Dictionary<string, Func<string, float>>
@@ -182,7 +183,7 @@ public class EnlightenedJi : BaseUnityPlugin {
         {"[15][Altar]Health Altar (BossGeneralState)",                 _ => 1f},
         {"[16]Divination JumpKicked (BossGeneralState)",               _ => 3f},
         {"PostureBreak (PostureBreakState)",                           _ => 3f},
-        {"1_Engaging (StealthEngaging)",                               _ => 0f}
+        {"1_Engaging (StealthEngaging)",                               _ => 3f}
     };
 
     private static string[] lore_quotes = [
@@ -292,6 +293,7 @@ public class EnlightenedJi : BaseUnityPlugin {
             mat = bundle.LoadAsset<Material>("RBFMat");
             if (mat is not null) 
             {
+                crimsonMat = new Material(mat);
                 ReloadMaterial();
             }
         }
@@ -322,23 +324,25 @@ public class EnlightenedJi : BaseUnityPlugin {
                 Transform sprite = go.transform.Find("View/Sprite");
                 // Logger.LogInfo("Got: " + sprite);
                 var spriteRenderer = sprite.GetComponent<SpriteRenderer>();
-                spriteRenderer.material = ColorChange.material;
+                spriteRenderer.material = mat;
             } else if (go.name == "Effect_TaiDanger(Clone)" || go.name == "Effect_TaiDanger") {
-                Logger.LogInfo("Found: " + go.name);
+                // Logger.LogInfo("Found: " + go.name);
                 Transform sprite = go.transform.Find("Sprite");
-                Logger.LogInfo("Got: " + sprite);
+                // Logger.LogInfo("Got: " + sprite);
                 var spriteRenderer = sprite.GetComponent<SpriteRenderer>();
-                Logger.LogInfo("Got: " + spriteRenderer);
-                spriteRenderer.material = ColorChange.material;
+                // Logger.LogInfo("Got: " + spriteRenderer);
+                spriteRenderer.material = crimsonMat;
             }
         }
     }
 
     private void ReloadMaterial()
     {
-        ColorChange.InitializeColorPairs([blackReplace.Value, furReplace.Value, eyeReplace.Value, 
-            greenReplace.Value, capeReplace.Value, robeReplace.Value, tanReplace.Value, crimsonReplace.Value]);
-        ColorChange.InitializeMat(mat);
+        // ColorChange.InitializePairs(ColorChange.colorPairs, ColorChange.originalColors, [blackReplace.Value, furReplace.Value, eyeReplace.Value, 
+        //     greenReplace.Value, capeReplace.Value, robeReplace.Value, tanReplace.Value]);
+        ColorChange.InitializeJiMat(mat, [blackReplace.Value, furReplace.Value, eyeReplace.Value, 
+            greenReplace.Value, capeReplace.Value, robeReplace.Value, tanReplace.Value]);
+        ColorChange.InitializeCrimsonMat(crimsonMat, [blackReplace.Value, crimsonReplace.Value]);
         Logger.LogInfo("Reloaded material!");
         StartCoroutine(ModifyMultiSprite());
 
@@ -350,13 +354,17 @@ public class EnlightenedJi : BaseUnityPlugin {
         {
 
             if (JiModifiedSprite.Value) {
-                ColorChange.getJiSprite();
+                ColorChange.getSprites();
                 JiSpriteUpdate = ActionSpriteUpdate;
+            } else {
+                JiSpriteUpdate = Pass;
             }
 
             if (JiModifiedSpeed.Value) {
                 CurrSpeedDict = SpeedDict1;
                 JiSpeedChange = ActionSpeedChange;
+            } else {
+                JiSpeedChange = Pass;
             }
 
             GetAttackGameObjects();
@@ -392,7 +400,11 @@ public class EnlightenedJi : BaseUnityPlugin {
 
     private static bool foo = true;
 
-    private static Action ActionSpriteUpdate = () => ColorChange.updateJiSprite();
+    private static Action ActionSpriteUpdate = () => 
+    {
+        ColorChange.updateJiSprite(mat);
+        ColorChange.updateCrimsonSprites(crimsonMat);
+    };
 
     private void ActionUpdate ()
     {
@@ -648,6 +660,8 @@ public class EnlightenedJi : BaseUnityPlugin {
         }
     }
 
+
+    // SOMETHING HERE IN PHASE 2 IS ALLOWING FOR SMALL BLACK HOLE BIG BLACK HOLE BACK TO BACK AND THAT NOT GOOD
     public void AlterAttacks(){
         if (Sequences1[Default].AttackSequence.Contains(Groups[SneakAttack])) {
             return;
