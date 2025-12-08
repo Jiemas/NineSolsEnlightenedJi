@@ -16,7 +16,7 @@ containsNsfwContent = false
 
 [build]
 icon = "./Ji_Young_Edited.png"
-readme = "./README.md"
+readme = "../README.md"
 EnlightenedJiBundle = "./EnlightenedJiBundle"
 outdir = "./build"
 
@@ -29,7 +29,7 @@ source = "EnlightenedJiBundle"
 target = "EnlightenedJiBundle"
 
 [[build.copy]]
-source = "CHANGELOG.md"
+source = "../CHANGELOG.md"
 target = "CHANGELOG.md"
 
 [publish]
