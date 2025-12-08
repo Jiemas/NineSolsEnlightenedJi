@@ -1,7 +1,12 @@
 # Changelog
 
-## [1.1.1](https://github.com/Jiemas/NineSolsEnlightenedJi/compare/v1.1.0...v1.1.1) (2025-12-X)
-- Updated README.md to add info about Mac incompatibility
+## [1.1.2](https://github.com/Jiemas/NineSolsEnlightenedJi/compare/v1.1.1...v1.1.2) (2025-12-X)
+- Updated Thunderstore README.md to add info about Mac incompatibility
+- Fixed date of 1.1.1 on changelog
+- Added more error handling in code
+
+## [1.1.1](https://github.com/Jiemas/NineSolsEnlightenedJi/compare/v1.1.0...v1.1.1) (2025-12-7)
+- Updated GitHub README.md to add info about Mac incompatibility
 - Added this changelog
 - Fixed bug where speed boost was applying to other bosses
 - Fixed bug where disabling sprite color change did not disable crimson attack change

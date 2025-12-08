@@ -1,12 +1,20 @@
+using NineSolsAPI;
 using UnityEngine;
 
 namespace EnlightenedJi;
 
 public class DestroyOnDisable : MonoBehaviour
 {
-    void OnDisable()
+    void Awake() 
     {
-        // When disabled, destroy the entire GameObject
-        Destroy(gameObject);
+        ToastManager.Toast($"{this.gameObject.name} created!");   
+        // Destroy(gameObject); 
     }
+    // void OnDisable()
+    // {
+    //     ToastManager.Toast($"{this.gameObject.name}: Circle disabled!");    
+
+    //     // When disabled, destroy the entire GameObject
+    //     // Destroy(gameObject);
+    // }
 }

@@ -339,6 +339,9 @@ public class EnlightenedJi : BaseUnityPlugin
 
     }
 
+    // private static string[] circularObjects = ["CircularDamage_Inverse", "CircularDamage_Inverse(Clone)", "CircularDamage_Inverse_ForBlackHole", "CircularDamage_Inverse_ForBlackHole(Clone)",
+    //             "CircularDamage", "CircularDamage(Clone)"];
+    private static string[] circularObjects = ["CircularDamage_Inverse", "CircularDamage"];
     private IEnumerator ModifyHiddenObjects() 
     {
         while (SceneManager.GetActiveScene().name != "A10_S5_Boss_Jee") 
@@ -368,7 +371,16 @@ public class EnlightenedJi : BaseUnityPlugin
                     taiMaterial = new Material(spriteRenderer.material);
                 }
                 spriteRenderer.material = JiModifiedSprite.Value ? crimsonMat : taiMaterial;
-            } 
+            } else if (circularObjects.Contains(go.name)) {
+
+                DestroyOnDisable foo = go.GetComponent<DestroyOnDisable>();
+                if (foo == null) 
+                {
+                    GameObject bar = Instantiate(go);
+                    DontDestroyOnLoad(bar);
+                    go.AddComponent<DestroyOnDisable>();
+                }
+            }
             // else if (go.name == "CircularDamage(Clone)" || go.name == "CircularDamage") 
             // {
             //     Logger.LogInfo("Found: " + go.name);
@@ -409,11 +421,27 @@ public class EnlightenedJi : BaseUnityPlugin
         if (scene.name == "A10_S5_Boss_Jee")
         {
             // KeybindManager.Add(this, ReloadMaterial, () => reloadMaterialKeyboardShortcut.Value);
-            ReloadMaterial();
+            try 
+            {
+                ReloadMaterial();
+            }
+            catch (Exception ex) 
+            {
+                Logger.LogInfo($"ReloadMaterial Unexpected error: {ex.Message}");
+            }
+            
             if (JiModifiedSprite.Value && bundle is not null) 
             {
-                ColorChange.getSprites();
-                JiSpriteUpdate = ActionSpriteUpdate;
+                try 
+                {
+                    ColorChange.getSprites();
+                    JiSpriteUpdate = ActionSpriteUpdate;
+                }
+                catch (Exception ex) 
+                {
+                    Logger.LogInfo($"getSprites Unexpected error: {ex.Message}");
+                }
+
             } 
             else 
             {
@@ -430,24 +458,60 @@ public class EnlightenedJi : BaseUnityPlugin
                 JiSpeedChange = Pass;
             }
 
-            GetAttackGameObjects();
+            try 
+            {
+                GetAttackGameObjects();
+            }
+            catch (Exception ex) 
+            {
+                Logger.LogInfo($"GetAttackGameObjects Unexpected error: {ex.Message}");
+            }
+
             if (JiModifiedAttackSequences.Value) 
             {
-                AlterAttacks();
+                try 
+                {
+                    AlterAttacks();    
+                }
+                catch (Exception ex) 
+                {
+                    Logger.LogInfo($"AlterAttacks Unexpected error: {ex.Message}");
+                }
             }
 
             JiUpdate = ActionUpdate;
 
             if (JiModifiedHP.Value) 
             {
-                StartCoroutine(JiHPChange(JiHPScale.Value, JiPhase2HPRatio.Value));
+                try 
+                {
+                    StartCoroutine(JiHPChange(JiHPScale.Value, JiPhase2HPRatio.Value));
+                }
+                catch (Exception ex) 
+                {
+                    Logger.LogInfo($"JiHPChange custom Unexpected error: {ex.Message}");
+                }
             }
             else 
             {
-                StartCoroutine(JiHPChange(5049f, 2f)); // TODO VERIFY REAL VALUE
+                try 
+                {
+                    StartCoroutine(JiHPChange(5049f, 2f)); // TODO VERIFY REAL VALUE
+                }
+                catch (Exception ex) 
+                {
+                    Logger.LogInfo($"JiHPChange default Unexpected error: {ex.Message}");
+                }
             }
-
-            StartCoroutine(InitJiStateChange());
+            try 
+            {
+                JiStateChange = Pass;
+                StartCoroutine(InitJiStateChange());
+            }
+            catch (Exception ex) 
+            {
+                Logger.LogInfo($"InitJiStateChange Unexpected error: {ex.Message}");
+            }
 
         }
         else {
@@ -467,7 +531,8 @@ public class EnlightenedJi : BaseUnityPlugin
 
     private IEnumerator InitJiStateChange() 
     {
-        while (MonsterManager.Instance.ClosetMonster is null) 
+        JiStateChange = Pass;
+        while (MonsterManager.Instance.ClosetMonster == null) 
         {
             yield return null;
         }
@@ -484,9 +549,30 @@ public class EnlightenedJi : BaseUnityPlugin
 
     private void ActionUpdate ()
     {
-        JiSpeedChange();
-        JiStateChange();
-        JiSpriteUpdate();
+        try 
+        {
+            JiSpeedChange();
+        }
+        catch (Exception ex) 
+        {
+            Logger.LogInfo($"JiSpeedChange Unexpected error: {ex.Message}");
+        }
+        try 
+        {
+            JiStateChange();
+        }
+        catch (Exception ex) 
+        {
+            Logger.LogInfo($"JiStateChange Unexpected error: {ex.Message}");
+        }
+        try 
+        {
+            JiSpriteUpdate();
+        }
+        catch (Exception ex) 
+        {
+            Logger.LogInfo($"JiSpriteUpdate Unexpected error: {ex.Message}");
+        }
     }
 
     public void Update() 
@@ -561,7 +647,7 @@ public class EnlightenedJi : BaseUnityPlugin
         }
         var JiMonster = MonsterManager.Instance.ClosetMonster;
         var baseHealthRef = AccessTools.FieldRefAccess<MonsterStat, float>("BaseHealthValue");
-        if (JiMonster.postureSystem.CurrentHealthValue != newHp)
+        if (JiMonster.postureSystem.CurrentHealthValue != newHp || baseHealthRef(JiMonster.monsterStat) != newHp / 1.35f)
         {
             baseHealthRef(JiMonster.monsterStat) = newHp / 1.35f;
             JiMonster.postureSystem.CurrentHealthValue = newHp;
